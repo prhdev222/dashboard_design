@@ -8,7 +8,8 @@
 |---|---|
 | `dashboard_executive.html` | Dashboard 1 สำหรับ **ทีมผู้บริหาร** — ขนาดปัญหา ใครรอนาน เวรไหนหนัก และสิ่งที่ต้องตัดสินใจ |
 | `dashboard_quality.html` | Dashboard 2 สำหรับ **ทีมพัฒนาคุณภาพ** — ตัวกรอง เดือน/เวร/วัน/ESI, ฮิสโตแกรม, heatmap, run chart, Pareto, ตารางตัวเลข |
-| `answers.md` | คำตอบข้อ 1–3 (เหตุผลการเลือกกราฟ, insight, แนวทางแก้ไข) และการเปิดเผยการใช้ Generative AI |
+| `index.html` | หน้าแรกของ web app พร้อมเมนูไปแต่ละหน้า |
+| `answers.html` / `answers.md` | คำตอบข้อ 1–3 (เหตุผลการเลือกกราฟ, insight, แนวทางแก้ไข) และการเปิดเผยการใช้ Generative AI |
 | `HW.md` | โจทย์ |
 | `sheet.csv` | ชุดข้อมูล (Patient_ID, Visit_Date, Shift, ESI, Waiting_Time_Minutes) |
 
@@ -19,8 +20,13 @@
 - คลิกที่กราฟเพื่อขยายเต็มหน้าจอ (ปิดด้วย ✕ หรือ Esc)
 - Dashboard ทีมคุณภาพ: เปลี่ยนตัวกรองด้านบนแล้วทุกกราฟคำนวณใหม่ทันที
 
-หรือดูออนไลน์ผ่าน GitHub Pages (ถ้าเปิดใช้ใน Settings → Pages → branch `main`):
-`https://prhdev222.github.io/dashboard_design/dashboard_executive.html` และ `https://prhdev222.github.io/dashboard_design/dashboard_quality.html`
+## ดูออนไลน์ (GitHub Pages)
+
+**https://prhdev222.github.io/dashboard_design/** — หน้าแรกมีเมนูไปยัง Dashboard ผู้บริหาร, Dashboard ทีมคุณภาพ และเอกสารคำตอบ ทุกหน้ามีแถบเมนูด้านบนสลับกันได้
+
+- https://prhdev222.github.io/dashboard_design/dashboard_executive.html
+- https://prhdev222.github.io/dashboard_design/dashboard_quality.html
+- https://prhdev222.github.io/dashboard_design/answers.html
 
 ## โปรแกรมที่ใช้
 

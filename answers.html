@@ -1,0 +1,205 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>คำตอบ · ER Wait Watch</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;600;700&family=Sarabun:wght@400;500;600;700&display=swap"><style>:root{color-scheme:light;
+ --page:#f4f6f5;--surface:#fcfcfb;--ink-1:#101413;--ink-2:#4f5754;--ink-3:#868e8a;--grid:#e3e6e3;--axis:#c5cac7;--line:rgba(16,20,19,.10);
+ --accent:#2a78d6;--accent-soft:#e3eefb;--gray-bar:#c9cfcc;
+ --sh-m:#2a78d6;--sh-a:#eb6834;--sh-n:#1baf7a;
+ --e1:#86b6ef;--e2:#5598e7;--e3:#2a78d6;--e4:#1c5cab;--e5:#104281;
+ --good:#0ca30c;--warn:#fab219;--serious:#ec835a;--crit:#d03b3b;--good-text:#006300;
+ --tip-bg:#101413;--tip-ink:#fff;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;
+ --page:#0e100f;--surface:#1a1a19;--ink-1:#f5f5f2;--ink-2:#c3c6c2;--ink-3:#8d918e;--grid:#2c2e2c;--axis:#3a3d3a;--line:rgba(255,255,255,.10);
+ --accent:#3987e5;--accent-soft:#1c2d42;--gray-bar:#454a47;
+ --sh-m:#3987e5;--sh-a:#d95926;--sh-n:#199e70;
+ --e1:#9ec5f4;--e2:#6da7ec;--e3:#3987e5;--e4:#256abf;--e5:#184f95;
+ --good-text:#0ca30c;--tip-bg:#f5f5f2;--tip-ink:#101413;}}
+:root[data-theme="dark"]{color-scheme:dark;
+ --page:#0e100f;--surface:#1a1a19;--ink-1:#f5f5f2;--ink-2:#c3c6c2;--ink-3:#8d918e;--grid:#2c2e2c;--axis:#3a3d3a;--line:rgba(255,255,255,.10);
+ --accent:#3987e5;--accent-soft:#1c2d42;--gray-bar:#454a47;
+ --sh-m:#3987e5;--sh-a:#d95926;--sh-n:#199e70;
+ --e1:#9ec5f4;--e2:#6da7ec;--e3:#3987e5;--e4:#256abf;--e5:#184f95;
+ --good-text:#0ca30c;--tip-bg:#f5f5f2;--tip-ink:#101413;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink-1);font-family:"Sarabun","IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.55;padding-inline:16px;padding-block:0 40px}
+h1,h2,h3{font-family:"IBM Plex Sans Thai","Sarabun",system-ui,sans-serif;text-wrap:balance;margin:0}
+.wrap{max-width:1140px;margin:0 auto}
+header.top{padding:28px 0 18px;display:grid;gap:6px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+h1{font-size:clamp(22px,3vw,30px);font-weight:700;line-height:1.25}
+.sub{color:var(--ink-2);font-size:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:14px 0}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;gap:2px;align-content:start}
+.tile .lb{font-size:13px;color:var(--ink-2)}
+.tile .v{font-size:30px;font-weight:600;line-height:1.1;font-family:"IBM Plex Sans Thai","Sarabun",system-ui,sans-serif}
+.tile .v.hero{font-size:48px}
+.tile .d{font-size:12.5px;color:var(--ink-3)}
+.tile.hero-tile{border-color:var(--accent);background:var(--accent-soft)}
+.status{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--ink-1)}
+.status i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;margin:14px 0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px 12px;display:grid;gap:8px;align-content:start;min-width:0}
+.card.wide{grid-column:1/-1}
+.card h2{font-size:16px;font-weight:700}
+.card .why{font-size:13px;color:var(--ink-2);margin:0}
+.card .note{font-size:12.5px;color:var(--ink-3);margin:0}
+.chart{width:100%;min-width:0}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--ink-2);padding-top:4px}
+.legend i,.sw{width:12px;height:12px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
+.tip{position:fixed;z-index:50;background:var(--tip-bg);color:var(--tip-ink);font-size:12.5px;line-height:1.45;padding:7px 10px;border-radius:6px;pointer-events:none;display:none;max-width:280px;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.tip b{font-weight:700}
+.msg{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:16px 18px;display:grid;gap:8px}
+.msg h2{font-size:16px}
+.msg ol,.msg ul{margin:0;padding-left:20px;display:grid;gap:6px}
+.msg li b{font-weight:700}
+.mini{font-size:12.5px;color:var(--ink-3);border-top:1px solid var(--line);padding-top:10px;margin-top:10px}
+.small{font-size:12.5px;color:var(--ink-2)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--grid);text-align:right;font-variant-numeric:tabular-nums}
+th{color:var(--ink-2);font-weight:600;font-size:12px}
+th:first-child,td:first-child{text-align:left}
+.tablewrap{overflow-x:auto}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:no-preference){.tile,.card{transition:border-color .2s}}
+
+.chart.zoomable{cursor:zoom-in;border-radius:6px}
+.chart.zoomable:hover{outline:1px solid var(--accent);outline-offset:4px}
+#lightbox{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:40;display:none;align-items:center;justify-content:center;padding:20px}
+.lb-box{background:var(--surface);color:var(--ink-1);border:1px solid var(--line);border-radius:12px;width:min(1240px,96vw);max-height:92vh;overflow:auto;padding:20px 26px 16px;display:grid;gap:10px;align-content:start}
+.lb-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.lb-head h2{font-size:20px;font-weight:700;margin:0}
+.lb-head .why{margin:4px 0 0;font-size:14px;color:var(--ink-2)}
+.lb-close{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink-1);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer}
+.lb-close:hover{background:var(--accent-soft)}
+.lb-chart{width:100%;min-height:200px}
+.lb-chart .legend{font-size:14px}
+
+.topnav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line);margin:0 -16px;padding:0 16px}
+.topnav .in{max-width:1140px;margin:0 auto;display:flex;align-items:center;gap:4px;flex-wrap:wrap;min-height:46px}
+.topnav .brand{font-family:"IBM Plex Sans Thai","Sarabun",system-ui,sans-serif;font-weight:700;font-size:14px;margin-right:12px;color:var(--ink-1);text-decoration:none}
+.topnav a.nl{color:var(--ink-2);text-decoration:none;font-size:13.5px;padding:6px 10px;border-radius:6px}
+.topnav a.nl:hover{background:var(--accent-soft);color:var(--ink-1)}
+.topnav a.nl[aria-current="page"]{background:var(--accent);color:#fff;font-weight:600}
+
+.doc{max-width:860px;margin:0 auto;padding:28px 0 60px}
+.doc h1{font-size:28px;margin:0 0 18px}
+.doc h2{font-size:21px;margin:34px 0 10px;padding-top:18px;border-top:1px solid var(--line)}
+.doc h3{font-size:16.5px;margin:22px 0 8px}
+.doc p,.doc li{max-width:72ch}
+.doc li{margin:4px 0}
+.doc table{margin:10px 0 16px}
+.doc td,.doc th{text-align:left;vertical-align:top}
+.doc hr{border:0;border-top:1px solid var(--line);margin:24px 0}
+.doc code{font-size:.92em;background:var(--accent-soft);padding:1px 5px;border-radius:4px}
+.doc a{color:var(--accent)}
+.doc em{color:var(--ink-2)}
+</style></head><body><nav class="topnav"><div class="in"><a class="brand" href="index.html">ER Wait Watch</a><a class="nl" href="index.html">หน้าแรก</a><a class="nl" href="dashboard_executive.html">Dashboard ผู้บริหาร</a><a class="nl" href="dashboard_quality.html">Dashboard ทีมคุณภาพ</a><a class="nl" href="answers.html" aria-current="page">คำตอบข้อ 1–3</a><a class="nl" href="https://github.com/prhdev222/dashboard_design" target="_blank" rel="noopener">GitHub ↗</a></div></nav><main class="doc"><h1>การบ้าน: วิเคราะห์ระยะเวลารอคอยห้องฉุกเฉิน (ER Waiting Time)</h1>
+<p><strong>โปรแกรมที่ใช้ทำ dashboard:</strong> HTML + SVG + JavaScript (เขียนโค้ดสร้างกราฟเอง ไม่ใช้ไลบรารี) โดยใช้ Python (pandas) วิเคราะห์ข้อมูลเบื้องต้น และใช้ Claude Code (Generative AI) ช่วยเขียนโค้ดและวิเคราะห์ — รายละเอียดในหัวข้อท้ายสุด</p>
+<p><strong>ชุดข้อมูล:</strong> sheet.csv — ผู้ป่วยห้องฉุกเฉิน 6,530 ครั้ง วันที่ 1 พ.ย. 2568 – 28 ม.ค. 2569 (84 วัน เฉลี่ย 77.7 คน/วัน) ตัวแปร: Patient_ID, Visit_Date, Shift (Morning/Afternoon/Night), ESI (1–5), Waiting_Time_Minutes ไม่มีข้อมูลขาดหาย ไม่มี ID ซ้ำ</p>
+<p><strong>เกณฑ์เวลาเป้าหมายที่ใช้ (อ้างอิงแนวทางคัดแยกผู้ป่วยฉุกเฉิน 5 ระดับ กระทรวงสาธารณสุข):</strong> ESI 1 ทันที (≤1 นาที ตามความละเอียดของข้อมูล) · ESI 2 ≤10 นาที · ESI 3 ≤30 นาที · ESI 4 ≤60 นาที · ESI 5 ≤120 นาที</p>
+<hr />
+<h2>ข้อ 1 Dashboard 2 อัน และเหตุผลในการเลือกกราฟ (20 คะแนน)</h2>
+<p>ไฟล์: <a href="dashboard_executive.html"><code>dashboard_executive.html</code></a> (ทีมผู้บริหาร) และ <a href="dashboard_quality.html"><code>dashboard_quality.html</code></a> (ทีมพัฒนาคุณภาพ) เปิดได้ด้วยเบราว์เซอร์ทั่วไป</p>
+<h3>หลักคิดในการออกแบบให้ต่างกัน</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>ทีมผู้บริหาร</th>
+<th>ทีมพัฒนาคุณภาพ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>คำถามที่ต้องตอบ</td>
+<td>ปัญหาใหญ่แค่ไหน ใครเดือดร้อน ต้องตัดสินใจอะไร</td>
+<td>ปัญหาอยู่ตรงไหน เกิดจากอะไร จะวัดผลอย่างไร</td>
+</tr>
+<tr>
+<td>เวลาที่มีดู</td>
+<td>2–3 นาที</td>
+<td>ใช้ทำงานซ้ำ ๆ เจาะลึกได้</td>
+</tr>
+<tr>
+<td>จำนวนกราฟ</td>
+<td>4 กราฟ + KPI 4 ตัว + ข้อเสนอ</td>
+<td>8 มุมมอง + ตัวกรอง (เดือน/เวร/วัน/ESI) + ตารางตัวเลข</td>
+</tr>
+<tr>
+<td>ระดับรายละเอียด</td>
+<td>ค่ากลาง (มัธยฐาน) และร้อยละ อ่านได้โดยไม่ต้องรู้สถิติ</td>
+<td>การกระจาย, P90, run chart, Pareto, heatmap</td>
+</tr>
+<tr>
+<td>การโต้ตอบ</td>
+<td>อ่านอย่างเดียว (มี tooltip)</td>
+<td>กรองข้อมูลแล้วทุกกราฟคำนวณใหม่ทันที</td>
+</tr>
+</tbody>
+</table>
+<h3>Dashboard 1: ทีมผู้บริหาร — กราฟที่เลือกและเหตุผล</h3>
+<ol>
+<li><strong>KPI tiles (ตัวเลขใหญ่ 4 ตัว) และ hero number "63.6% ทันเป้า"</strong> — ผู้บริหารต้องเห็น "ขนาดของปัญหา" ในตัวเลขเดียวก่อน ตัวเลขเดียวสื่อได้ดีกว่ากราฟแท่งเดียว ใส่สถานะ (สีแดง + ข้อความ "ต่ำกว่าเป้า 80%") เพื่อบอกว่าดีหรือแย่ทันที</li>
+<li><strong>กราฟแท่งแนวนอน: มัธยฐานเวลารอแยกตาม ESI พร้อมขีดเป้าหมายและจุด P90</strong> — ตอบว่า "ใครรอนาน" การเปรียบเทียบขนาดระหว่างกลุ่มคือหน้าที่ของกราฟแท่ง ใช้แนวนอนเพราะชื่อกลุ่มยาว (ภาษาไทย) ใช้เทคนิค emphasis คือกลุ่มปัญหา (ESI 4–5) เป็นสีน้ำเงิน กลุ่มอื่นสีเทา เพื่อให้สายตาไปที่จุดที่สำคัญทันที ใช้มัธยฐานแทนค่าเฉลี่ยเพราะข้อมูลเบ้ขวามาก (มี outlier ถึง 416 นาที) และเพิ่มจุด P90 เพื่อสื่อว่า "ผู้ป่วย 1 ใน 10 รอนานกว่านี้"</li>
+<li><strong>กราฟแท่งแนวตั้ง: % ผู้ป่วยทันเป้าหมายแยกตาม ESI พร้อมเส้นเป้า 80%</strong> — ผู้บริหารคุ้นกับ KPI แบบร้อยละเทียบเป้า กราฟนี้แปลงเวลารอเป็น "ผ่าน/ไม่ผ่าน" ซึ่งเป็นภาษาของการบริหาร และเห็นชัดว่า ESI 4 ทันเป้าเพียง 12%</li>
+<li><strong>กราฟแท่งกลุ่ม: มัธยฐานเวลารอ ESI 4 และ 5 แยกตามเวร พร้อมจำนวนผู้ป่วยต่อเวร</strong> — ตอบว่า "ปัญหาอยู่ที่เวรไหน" ซึ่งเชื่อมกับการตัดสินใจเรื่องอัตรากำลังโดยตรง ใช้เพียง 2 ชุดข้อมูล (สีน้ำเงินสองระดับ) ไม่ใส่ ESI 1–3 เพื่อไม่ให้รก</li>
+<li><strong>กราฟเส้น: % ทันเป้ารายสัปดาห์ตลอด 3 เดือน</strong> — กราฟเส้นคือรูปแบบมาตรฐานของ "แนวโน้มตามเวลา" ใช้ตอบคำถามที่ผู้บริหารมักถามว่า "เป็นแค่ช่วงนี้หรือเปล่า" คำตอบคือทรงตัวที่ 58–65% ทุกสัปดาห์ → ปัญหาเชิงระบบ</li>
+<li><strong>กล่องข้อความ "ข้อค้นพบ 3 ข้อ" และ "สิ่งที่ขอให้พิจารณา"</strong> — dashboard ผู้บริหารต้องจบด้วยการตัดสินใจ ไม่ใช่จบด้วยกราฟ</li>
+</ol>
+<p>สิ่งที่ตั้งใจ <em>ไม่ใส่</em>: ฮิสโตแกรม, heatmap, Pareto, ตารางตัวเลข เพราะต้องใช้เวลาตีความ ไม่เหมาะกับการนำเสนอสั้น ๆ</p>
+<h3>Dashboard 2: ทีมพัฒนาคุณภาพ — กราฟที่เลือกและเหตุผล</h3>
+<ol>
+<li><strong>แถวตัวกรอง (เดือน / เวร / วันธรรมดา–สุดสัปดาห์ / ESI) ที่ควบคุมทุกกราฟ</strong> — ทีมคุณภาพต้อง "เจาะ" ข้อมูลเองได้ (drill-down) โดยไม่ต้องขอข้อมูลใหม่ทุกครั้ง</li>
+<li><strong>ฮิสโตแกรมแยกตาม ESI (small multiples)</strong> — ค่าเฉลี่ยและมัธยฐานซ่อน "รูปร่าง" ของปัญหา ฮิสโตแกรมทำให้เห็นว่า ESI 3 มีการกระจายแบบสองยอด (bimodal): 83% รอ ≤30 นาที แต่มีอีกกลุ่ม 247 คนรอ 121–220 นาที ซึ่งเป็นความรู้ที่กราฟแท่งให้ไม่ได้ และเห็นว่า ESI 4 เลื่อนไปทางขวาทั้งก้อน (ปัญหา capacity) ไม่ใช่แค่หางยาว (ปัญหา outlier)</li>
+<li><strong>Heatmap ESI × เวร (สลับตัวชี้วัด: มัธยฐาน / P90 / % ทันเป้า / จำนวนเกินเป้า)</strong> — ตารางความร้อนหาจุดตัดที่แย่ที่สุดของสองมิติได้ในภาพเดียว (ESI 4 เวรบ่าย) และใช้สีเดียวไล่ระดับ (sequential) เพื่อให้ "เข้ม = แย่" อ่านง่ายและปลอดภัยต่อผู้ตาบอดสี</li>
+<li><strong>Heatmap วันในสัปดาห์ × เวร (ผู้ป่วย/เวร/วัน, มัธยฐาน ESI 4–5, % ทันเป้า)</strong> — ใช้ตัดสินว่าปัญหาเป็นเรื่องของ "วัน" หรือ "เวร" ผลคือคอลัมน์เวรบ่ายเข้มทุกวัน → เป็นปัญหาโครงสร้างเวร ไม่ใช่วันพีค</li>
+<li><strong>Run chart รายสัปดาห์ 2 กราฟ (P90 เวลารอ และ % ทันเป้า) พร้อม centerline</strong> — เป็นเครื่องมือมาตรฐานของงานพัฒนาคุณภาพ (PDSA / SPC) ใช้ดูว่ากระบวนการนิ่งหรือไม่ และเป็น baseline สำหรับเทียบผลหลังปรับปรุง แยกสองกราฟแทนการใช้สองแกน Y เพื่อไม่ให้เกิดความสัมพันธ์หลอก</li>
+<li><strong>Pareto: จำนวนผู้ป่วยรอเกินเป้าแยกตามกลุ่ม ESI × เวร พร้อมร้อยละสะสม</strong> — หลัก 80/20 ช่วยจัดลำดับว่าควรแก้กลุ่มไหนก่อน: 3 กลุ่มแรก (ESI 4 บ่าย, ESI 4 เช้า, ESI 5 บ่าย) = 58% ของผู้รอเกินเป้าทั้งหมด</li>
+<li><strong>กราฟแท่ง: นาทีรอส่วนเกินสะสมแยกตาม ESI</strong> — วัด "ภาระ" (เวลารอ − เป้า) ซึ่งต่างจากจำนวนคน ทำให้เห็นว่า ESI 3 แม้ทันเป้า 83% แต่กลุ่มที่หลุดสร้างนาทีส่วนเกินสูงเป็นอันดับ 2 → คุ้มค่าที่จะแก้</li>
+<li><strong>ตารางตัวเลข ESI × เวร</strong> — ทีมคุณภาพต้องใช้ตัวเลขจริงในรายงานและตรวจสอบย้อนกลับได้ และเป็นทางเลือกสำหรับผู้ที่อ่านสีไม่ได้</li>
+</ol>
+<p><strong>หลักการเลือกสีที่ใช้ทั้งสอง dashboard:</strong> ใช้สีน้ำเงินไล่ระดับสำหรับ ESI (ข้อมูลมีลำดับ), สีเทาสำหรับกลุ่มที่ไม่ใช่ประเด็น (emphasis), สีสถานะ (แดง/เหลือง/เขียว) ใช้เฉพาะกับ KPI ที่มีความหมายดี/แย่ และมีข้อความกำกับเสมอ ไม่ใช้สีเพียงอย่างเดียวสื่อความหมาย ทุกกราฟมี tooltip และมีตารางตัวเลขสำรอง</p>
+<hr />
+<h2>ข้อ 2 Insight จากข้อมูล (10 คะแนน)</h2>
+<ol>
+<li><strong>ผู้ป่วย 36.4% (2,377 คน) ได้รับการตรวจช้ากว่าเวลาเป้าหมาย</strong> และ 1,029 คน (15.8%) รอเกิน 2 ชั่วโมง นานสุด 416 นาที (เกือบ 7 ชั่วโมง)</li>
+<li><strong>ระบบคัดแยกผู้ป่วยวิกฤต "ทำงานได้ดี"</strong>: ESI 1 รอ 0–1 นาที และ ESI 2 รอ 1–3 นาที ทุกราย (100% ทันเป้า) — ข้อร้องเรียนจึงไม่ได้มาจากผู้ป่วยหนัก</li>
+<li><strong>ปัญหากระจุกอยู่ที่กลุ่มไม่เร่งด่วน ESI 4–5</strong> ซึ่งเป็น 39% ของผู้ป่วย (2,542 คน): ESI 4 รอมัธยฐาน 89 นาที (เป้า 60) ทันเป้าเพียง 12% และ ESI 5 รอมัธยฐาน 128 นาที (เป้า 120) ทันเป้า 41% กลุ่มนี้คิดเป็น 82% ของผู้รอเกินเป้าทั้งหมด</li>
+<li><strong>เวรบ่ายเป็นคอขวด</strong>: รับผู้ป่วย 43% ของทั้งหมด (33.5 คน/เวร เทียบเวรเช้า 25.1 และดึก 19.1) และ ESI 4 เวรบ่ายรอมัธยฐาน 101 นาที ทันเป้าเพียง 1.2% (8 จาก 672 คน) ขณะที่เวรเช้า 77 นาที (ทันเป้า 25%) ต่างกันถึง 24 นาที ทั้งที่เป็นผู้ป่วยระดับเดียวกัน</li>
+<li><strong>ผู้ป่วย ESI 3 (เร่งด่วน) ราว 1 ใน 10 "หลุด" จากระบบ</strong>: 247 คน (9.7%) รอ 121–220 นาที (มัธยฐาน 171 นาที) ทั้งที่ ESI 3 ที่เหลือรอมัธยฐานเพียง 15 นาที เกิดในสัดส่วนใกล้เคียงกันทุกเวรและทุกเดือน (8–11%) → ไม่ใช่เรื่องของปริมาณผู้ป่วย แต่เป็นช่องโหว่ของกระบวนการ (เช่น ไม่ถูกเรียก ไม่ re-triage รอเตียงสังเกตอาการ) และเป็นความเสี่ยงด้านความปลอดภัยผู้ป่วยที่สำคัญที่สุดในข้อมูลชุดนี้</li>
+<li><strong>ปัญหาเป็นเชิงระบบและคงที่</strong>: % ทันเป้ารายสัปดาห์แกว่งแคบ ๆ 58–65% ตลอด 14 สัปดาห์ ไม่มีแนวโน้มขึ้นหรือลง รายเดือนแทบเท่ากัน (63.3% / 64.5% / 62.9%) วันเสาร์–อาทิตย์สูงกว่าวันธรรมดาเพียงเล็กน้อย และปริมาณผู้ป่วยรายวันแทบไม่สัมพันธ์กับเวลารอ (r ≈ 0.1) → วันที่คนน้อยก็ยังรอนาน แสดงว่าคอขวดอยู่ที่วิธีทำงาน/กำลังคนต่อเวร ไม่ใช่วันพีคเป็นครั้งคราว</li>
+<li><strong>ภาระการรอที่เกินเป้ารวม 113,047 นาที (≈1,884 ชั่วโมง) ใน 3 เดือน</strong> โดย ESI 4 แบกรับ 49% ESI 3 (กลุ่มหลุด) 32% และ ESI 5 20%</li>
+</ol>
+<p><strong>ข้อจำกัดของข้อมูล:</strong> ไม่มีเวลามาถึงจริง (ระบุเฉพาะเวร) ไม่มีข้อมูลจำนวนแพทย์/พยาบาลต่อเวร ไม่มีผลลัพธ์ (LWBS, admit, ความพึงพอใจ) และไม่ทราบว่าเวลารอนับจากจุดใด (ลงทะเบียน → พบแพทย์?) จึงบอกได้ว่า "ปัญหาอยู่ที่ไหน" แต่ต้องไปเก็บข้อมูลเพิ่มเพื่อยืนยัน "สาเหตุ"</p>
+<hr />
+<h2>ข้อ 3 แนวทางแก้ไขปัญหา (10 คะแนน)</h2>
+<p>จัดลำดับตาม Pareto และความเสี่ยงต่อผู้ป่วย</p>
+<h3>ก. แก้ที่กลุ่มใหญ่ที่สุด: ESI 4–5 (ระยะสั้น 1–3 เดือน)</h3>
+<ol>
+<li><strong>เปิด Fast-track / Minor-care zone</strong> แยกจากโซนฉุกเฉิน สำหรับ ESI 4–5 ให้พยาบาลเวชปฏิบัติหรือแพทย์ 1 คนดูแลเฉพาะ อย่างน้อยช่วงเวรบ่าย (12:00–20:00) ซึ่งเป็นช่วงที่ผู้ป่วยกลุ่มนี้มากที่สุด (1,111 คนใน 3 เดือน) — งานวิจัยและประสบการณ์ รพ. หลายแห่งพบว่าลดเวลารอกลุ่มไม่เร่งด่วนได้ 30–50% โดยไม่กระทบผู้ป่วยหนัก</li>
+<li><strong>ปรับอัตรากำลังเวรบ่ายให้สอดคล้องกับปริมาณผู้ป่วย</strong> (เวรบ่ายมีผู้ป่วยมากกว่าเวรดึก 76% แต่ถ้าอัตรากำลังเท่ากัน ย่อมรอนานกว่า) เช่น เหลื่อมเวลาเวร (10:00–18:00 หรือ 14:00–22:00) หรือเพิ่มแพทย์ part-time ช่วงพีค</li>
+<li><strong>Triage nurse สั่งการตรวจเบื้องต้นได้ (nurse-initiated protocol)</strong> เช่น เจาะเลือด เอกซเรย์ ยาแก้ปวด ระหว่างรอแพทย์ เพื่อให้เวลารอเป็นเวลาที่มีประโยชน์และลดรอบการรอซ้ำ</li>
+<li><strong>ลดผู้ป่วยไม่ฉุกเฉินเข้า ER</strong>: ประสาน OPD นอกเวลา / คลินิกพิเศษ / ให้ข้อมูลผู้ป่วยตั้งแต่จุดคัดกรองว่า ESI 5 อาจใช้บริการ OPD ได้เร็วกว่า</li>
+</ol>
+<h3>ข. ปิดช่องโหว่ความปลอดภัย: ESI 3 กลุ่มหลุด (ทำทันที)</h3>
+<ol>
+<li><strong>ทบทวนเวชระเบียนผู้ป่วย ESI 3 ที่รอเกิน 120 นาที ทั้ง 247 ราย (RCA)</strong> เพื่อหาสาเหตุร่วม เช่น ไม่ถูกเรียกชื่อ ระบบคิวไม่บันทึก ถูกส่งไปห้องสังเกตอาการแล้วไม่ได้ปิดเวลา หรือ triage ผิดระดับ</li>
+<li><strong>Re-triage ทุก 30 นาที</strong> สำหรับผู้ป่วยที่ยังไม่ได้พบแพทย์ พร้อม <strong>แจ้งเตือนอัตโนมัติจาก EMR</strong> เมื่อ ESI 3 รอเกิน 30 นาที และ ESI 4 รอเกิน 60 นาที (visual board ในห้องฉุกเฉินแสดงเวลารอเรียลไทม์)</li>
+<li><strong>มอบหมาย "flow nurse / ผู้จัดการคิว" ต่อเวร</strong> รับผิดชอบดูภาพรวมผู้ป่วยรอตรวจทั้งหมด ไม่ปล่อยให้ใครหลุด</li>
+</ol>
+<h3>ค. สร้างระบบวัดผลและปรับปรุงต่อเนื่อง</h3>
+<ol>
+<li><strong>ตั้ง KPI และเป้าหมาย</strong>: ผู้ป่วยทันเวลาเป้าหมาย ≥80% ทุกระดับ ESI ภายใน 6 เดือน, ESI 3 รอเกิน 60 นาที = 0, P90 ESI 4 ≤90 นาที</li>
+<li><strong>ติดตามด้วย run chart รายสัปดาห์</strong> (dashboard ทีมคุณภาพ) เทียบ centerline ก่อนปรับปรุง ใช้วงจร PDSA ทดลอง Fast-track ในเวรบ่าย 4 สัปดาห์ก่อนขยาย</li>
+<li><strong>เพิ่มตัวแปรใน EMR</strong> ที่ข้อมูลปัจจุบันขาด: เวลามาถึงจริง, เวลาคัดแยก, เวลาพบแพทย์, จำนวนบุคลากรต่อเวร, LWBS — เพื่อวิเคราะห์สาเหตุได้ลึกขึ้นในรอบถัดไป</li>
+<li><strong>สื่อสารกับผู้ป่วย</strong>: แสดงเวลารอโดยประมาณตามระดับความรุนแรงที่จุดคัดกรอง และอธิบายระบบคัดแยก — ลดข้อร้องเรียนจากความไม่เข้าใจว่า "ทำไมคนมาทีหลังได้ตรวจก่อน"</li>
+</ol>
+<h3>ตัวชี้วัดคุม (balancing measures)</h3>
+<p>เวลารอ ESI 1–2 ต้องไม่แย่ลง (ปัจจุบัน ≤3 นาที), อัตราการกลับมาใน 48 ชม. และความพึงพอใจของบุคลากร เพื่อให้แน่ใจว่าการเร่งกลุ่มไม่เร่งด่วนไม่ไปเบียดผู้ป่วยหนัก</p>
+<hr />
+<h2>การใช้ Generative AI ในงานชิ้นนี้ (ตามหมายเหตุข้อ 3)</h2>
+<ul>
+<li><strong>GenAI ที่ใช้:</strong> Claude Code (โมเดล Claude Fable 5.1 ของ Anthropic)</li>
+<li><strong>ใช้ทำอะไร:</strong> (1) วิเคราะห์ข้อมูลเชิงสำรวจจาก sheet.csv ด้วย Python/pandas (ค่าสถิติแยกตาม ESI, เวร, เดือน, วัน) (2) เขียนโค้ด HTML/SVG/JavaScript สร้าง dashboard ทั้งสอง (3) ร่างคำอธิบายเหตุผลการเลือกกราฟ insight และแนวทางแก้ไข</li>
+<li><strong>Prompt ที่ใช้:</strong> "please help me in sheet.csv ตอบคำถาม 1. ขอให้ท่านทำ dashboard สองอันเพื่อนำเสนอต่อ 1) ทีมผู้บริหาร และ 2) ทีมพัฒนาคุณภาพ พร้อมบอกเหตุผลว่าทำไมถึงเลือกแสดงข้อมูลด้วยกราฟที่เลือกมา 2. สรุป insight ที่ได้จากข้อมูลชุดนี้ 3. นำเสนอแนวทางแก้ไขปัญหา"</li>
+<li><strong>Output ที่ได้:</strong> ไฟล์ dashboard_executive.html, dashboard_quality.html และเอกสารนี้ (answers.md)</li>
+<li><strong>เชื่อหรือไม่เชื่อ output เพราะอะไร:</strong> <em>(ให้ผู้เรียนเขียนด้วยตนเอง — แนวทาง: ตัวเลขสถิติตรวจสอบซ้ำได้จากตาราง ESI × เวร ใน dashboard 2 และจากการคำนวณใน Excel/pandas; ส่วนที่ควรพิจารณาเองคือ (ก) เกณฑ์เวลาเป้าหมายของ ESI แต่ละระดับ ซึ่ง AI สมมติตามแนวทางกระทรวงสาธารณสุข อาจต่างจากเกณฑ์ของ รพ. ท่าน (ข) การตีความว่า ESI 3 กลุ่มรอนานคือ "ผู้ป่วยหลุดจากระบบ" เป็นสมมติฐานจากรูปแบบข้อมูล ยังไม่ได้ยืนยันจากเวชระเบียน (ค) แนวทางแก้ไขเป็นข้อเสนอทั่วไป ต้องปรับตามบริบท/ทรัพยากรของ รพ.)</em></li>
+<li><strong>หากไม่เชื่อ แก้ไขอย่างไร:</strong> <em>(ให้ผู้เรียนเขียนด้วยตนเอง เช่น เปลี่ยนเกณฑ์เวลาเป้าหมายในโค้ด <code>TGT</code>, ตัดหรือเพิ่มข้อเสนอแนะ, ตรวจสอบตัวเลขซ้ำด้วย Excel)</em></li>
+</ul></main></body></html>
