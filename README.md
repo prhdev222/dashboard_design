@@ -28,6 +28,10 @@
 - https://prhdev222.github.io/dashboard_design/dashboard_quality.html
 - https://prhdev222.github.io/dashboard_design/answers.html
 
+## เกณฑ์เวลาเป้าหมาย (cut point)
+
+ESI 1 ทันที · ESI 2 ≤10 นาที · ESI 3 ≤30 · ESI 4 ≤60 · ESI 5 ≤120 นาที — ระดับ 3–5 อ้างอิง CTAS, ระดับ 2 อ้างอิงคู่มือ ESI (AHRQ); เป้าหมาย "ทันเวลา ≥80%" กำหนดโดยผู้จัดทำ รายละเอียดและเอกสารอ้างอิงอยู่ใน `answers.md`
+
 ## โปรแกรมที่ใช้
 
 HTML + SVG + JavaScript (เขียนโค้ดกราฟเอง ไม่ใช้ไลบรารี) · Python (pandas) สำหรับวิเคราะห์ข้อมูลเบื้องต้น · Claude Code (Generative AI) ช่วยวิเคราะห์และเขียนโค้ด — รายละเอียดใน `answers.md`
