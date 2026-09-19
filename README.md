@@ -7,7 +7,7 @@
 | ไฟล์ | คืออะไร |
 |---|---|
 | `dashboard_executive.html` | Dashboard 1 สำหรับ **ทีมผู้บริหาร** — ขนาดปัญหา ใครรอนาน เวรไหนหนัก และสิ่งที่ต้องตัดสินใจ |
-| `dashboard_quality.html` | Dashboard 2 สำหรับ **ทีมพัฒนาคุณภาพ** — ตัวกรอง เดือน/เวร/วัน/ESI, ฮิสโตแกรม/Box plot, heatmap, SPC control charts (XmR, p-chart, u-chart), Pareto, ตารางสรุปแบบเล่าเรื่อง |
+| `dashboard_quality.html` | Dashboard 2 สำหรับ **ทีมพัฒนาคุณภาพ** — ตัวกรอง เดือน/เวร/วัน/ESI, ฮิสโตแกรม/Box plot, heatmap, run chart, Pareto, ตารางสรุปแบบเล่าเรื่อง |
 | `index.html` | หน้าแรกของ web app พร้อมเมนูไปแต่ละหน้า |
 | `answers.html` / `answers.md` | คำตอบข้อ 1–3 (เหตุผลการเลือกกราฟ, insight, แนวทางแก้ไข) และการเปิดเผยการใช้ Generative AI |
 | `HW.md` | โจทย์ |
