@@ -81,7 +81,15 @@ th:first-child,td:first-child{text-align:left}
 .printbtn:hover{border-color:var(--accent);background:var(--accent-soft)}
 header.top.headrow{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
 header.top.headrow .headtext{display:grid;gap:6px;flex:1 1 520px;min-width:0}
+
+.charttools{display:flex;justify-content:flex-end;gap:6px;margin-top:2px}
+.tbtn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);font:inherit;font-size:12px;padding:3px 9px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.tbtn:hover{border-color:var(--accent);color:var(--ink-1);background:var(--accent-soft)}
+.tbtn:disabled{opacity:.6;cursor:default}
+.lb-actions{display:flex;gap:8px;align-items:center;flex:none}
+.lb-actions .tbtn{font-size:13px;padding:6px 11px}
 @media print{
+ .charttools,.lb-actions{display:none!important}
  :root,:root[data-theme="dark"],:root:not([data-theme="light"]){color-scheme:light;--page:#fff;--surface:#fff;--ink-1:#000;--ink-2:#333;--ink-3:#666;--grid:#dcdcdc;--axis:#b5b5b5;--line:rgba(0,0,0,.18);--accent:#2a78d6;--accent-soft:#eaf1fb;--gray-bar:#c8c8c8;--e1:#86b6ef;--e2:#5598e7;--e3:#2a78d6;--e4:#1c5cab;--e5:#104281;--tip-bg:#000;--tip-ink:#fff}
  @page{size:A4 landscape;margin:12mm}
  html,body{background:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -270,11 +278,13 @@ function heatmap(c,o){clear(c);const W=c.clientWidth||500,rowH=o.rowH||40,labelW
 
 /* ---- click-to-enlarge ---- */
 const REG={};
-function reg(id,fn){REG[id]=fn;const c=document.getElementById(id);if(!c)return;if(!c.dataset.lb){c.dataset.lb='1';c.classList.add('zoomable');c.title='คลิกเพื่อขยาย';c.addEventListener('click',e=>{if(e.target.closest('.legend'))return;openLB(id);});}fn(c,false);}
+function reg(id,fn){REG[id]=fn;const c=document.getElementById(id);if(!c)return;if(!c.dataset.lb){c.dataset.lb='1';c.classList.add('zoomable');c.title='คลิกเพื่อขยาย';c.addEventListener('click',e=>{if(e.target.closest('.legend'))return;openLB(id);});
+  const tb=document.createElement('div');tb.className='charttools';tb.innerHTML=`<button type="button" class="tbtn" data-act="zoom">${ICON_ZOOM}ขยาย</button><button type="button" class="tbtn" data-act="save">${ICON_DL}ดาวน์โหลดรูป PNG</button>`;
+  tb.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;e.stopPropagation();if(b.dataset.act==='zoom')openLB(id);else saveChart(id,false,b);});c.insertAdjacentElement('afterend',tb);}fn(c,false);}
 function openLB(id){let lb=document.getElementById('lightbox');
  if(!lb){lb=document.createElement('div');lb.id='lightbox';lb.setAttribute('role','dialog');lb.setAttribute('aria-modal','true');
-  lb.innerHTML='<div class="lb-box"><div class="lb-head"><div><h2></h2><p class="why"></p></div><button class="lb-close" aria-label="ปิด">✕</button></div><div class="lb-chart chart" id="lb-chart"></div><p class="note">กด Esc หรือคลิกพื้นที่ว่างเพื่อปิด</p></div>';
-  document.body.appendChild(lb);lb.addEventListener('click',e=>{if(e.target===lb||e.target.closest('.lb-close'))closeLB();});
+  lb.innerHTML='<div class="lb-box"><div class="lb-head"><div><h2></h2><p class="why"></p></div><div class="lb-actions"><button type="button" class="tbtn lb-save">'+ICON_DL+'ดาวน์โหลดรูป PNG</button><button class="lb-close" aria-label="ปิด">✕</button></div></div><div class="lb-chart chart" id="lb-chart"></div><p class="note">กด Esc หรือคลิกพื้นที่ว่างเพื่อปิด</p></div>';
+  document.body.appendChild(lb);lb.addEventListener('click',e=>{if(e.target.closest('.lb-save')){saveChart(lb.dataset.id,true,e.target.closest('.lb-save'));return;}if(e.target===lb||e.target.closest('.lb-close'))closeLB();});
   addEventListener('keydown',e=>{if(e.key==='Escape')closeLB();});}
  const src=document.getElementById(id);const card=src&&src.closest('.card,.hist');
  lb.querySelector('h2').textContent=(src&&src.dataset.lbTitle)||(card?(card.querySelector('h2')||{}).textContent||'':'');
@@ -283,6 +293,54 @@ function openLB(id){let lb=document.getElementById('lightbox');
  const box=lb.querySelector('.lb-chart');box.innerHTML='';requestAnimationFrame(()=>REG[id](box,true));lb.querySelector('.lb-close').focus();}
 function closeLB(){const lb=document.getElementById('lightbox');if(lb&&lb.style.display!=='none'){lb.style.display='none';document.body.style.overflow='';tipHide();}}
 function redrawLB(){const lb=document.getElementById('lightbox');if(lb&&lb.style.display==='flex'&&REG[lb.dataset.id]){const box=lb.querySelector('.lb-chart');box.innerHTML='';REG[lb.dataset.id](box,true);}}
+
+/* ---- download chart as PNG ---- */
+const ICON_DL='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg>';
+const ICON_ZOOM='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>';
+const FONT_STACK='"Sarabun","IBM Plex Sans Thai","Thonburi","Leelawadee UI","Tahoma",system-ui,sans-serif';
+function cssVar(name,fallback){const v=getComputedStyle(document.documentElement).getPropertyValue(name).trim();return v||fallback;}
+async function renderChartPNG(id,fromLB){
+ const holder=document.getElementById(fromLB?'lb-chart':id);const svg=holder&&holder.querySelector('svg');if(!svg)throw new Error('no svg');
+ const srcEl=document.getElementById(id);const card=srcEl&&srcEl.closest('.card,.hist');
+ const h2=card&&card.querySelector('h2');let h2t='';if(h2){const k=h2.cloneNode(true);k.querySelectorAll('.badge').forEach(b=>b.remove());h2t=k.textContent.replace(/\s+/g,' ').trim();}
+ const title=(srcEl&&srcEl.dataset.lbTitle)||h2t||id;
+ const sub=(srcEl&&srcEl.dataset.lbSub)||(card&&card.querySelector('.why')?card.querySelector('.why').textContent.replace(/\s+/g,' ').trim():'');
+ const clone=svg.cloneNode(true);
+ const oe=[svg,...svg.querySelectorAll('*')],ce=[clone,...clone.querySelectorAll('*')];
+ oe.forEach((o,i)=>{const c=ce[i];const cs=getComputedStyle(o);['fill','stroke'].forEach(a=>{const val=c.getAttribute(a);if(val&&val.indexOf('var(')>=0)c.setAttribute(a,cs[a]);});if(c.tagName==='text'){c.setAttribute('font-family',FONT_STACK);if(!c.getAttribute('font-size'))c.setAttribute('font-size','12');}c.removeAttribute('tabindex');});
+ const vb=svg.viewBox.baseVal;const W=Math.round(vb.width||svg.clientWidth),H=Math.round(vb.height||svg.clientHeight);
+ clone.setAttribute('width',W);clone.setAttribute('height',H);clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
+ const legend=holder.querySelector('.legend')||(card&&card.querySelector('.legend'));
+ const items=legend?[...legend.querySelectorAll('span')].map(s=>{const i=s.querySelector('i');return {t:s.textContent.replace(/\s+/g,' ').trim(),c:i?getComputedStyle(i).backgroundColor:'#888'};}):[];
+ const scale=2,pad=28,lineH=18;
+ const surf=cssVar('--surface','#fff'),ink=cssVar('--ink-1','#000'),ink2=cssVar('--ink-2','#444'),ink3=cssVar('--ink-3','#777');
+ const tmp=document.createElement('canvas').getContext('2d');
+ function wrap(text,font,max){tmp.font=font;const words=text.split(' ');const lines=[];let cur='';words.forEach(w=>{const t=cur?cur+' '+w:w;if(tmp.measureText(t).width>max&&cur){lines.push(cur);cur=w;}else cur=t;});if(cur)lines.push(cur);return lines;}
+ const tf='600 17px '+FONT_STACK,sf='13px '+FONT_STACK,lf='12px '+FONT_STACK;
+ const tl=wrap(title,tf,W),sl=sub?wrap(sub,sf,W):[];
+ const headH=tl.length*22+sl.length*lineH+10;
+ tmp.font=lf;let lw=0,legLines=1;let x=0;items.forEach(it=>{const w=17+tmp.measureText(it.t).width+18;if(x+w>W&&x>0){legLines++;x=0;}x+=w;});
+ const legH=items.length?legLines*20+6:0,footH=22;
+ const cw=W+pad*2,ch=pad+headH+H+legH+footH+pad;
+ const canvas=document.createElement('canvas');canvas.width=cw*scale;canvas.height=ch*scale;const ctx=canvas.getContext('2d');ctx.scale(scale,scale);
+ ctx.fillStyle=surf;ctx.fillRect(0,0,cw,ch);
+ let y=pad+17;ctx.fillStyle=ink;ctx.font=tf;tl.forEach(l=>{ctx.fillText(l,pad,y);y+=22;});
+ ctx.fillStyle=ink2;ctx.font=sf;sl.forEach(l=>{ctx.fillText(l,pad,y);y+=lineH;});
+ const img=new Image();const blob=new Blob([new XMLSerializer().serializeToString(clone)],{type:'image/svg+xml;charset=utf-8'});const url=URL.createObjectURL(blob);
+ await new Promise((res,rej)=>{img.onload=res;img.onerror=()=>rej(new Error('svg render failed'));img.src=url;});
+ const top=pad+headH;ctx.drawImage(img,pad,top,W,H);URL.revokeObjectURL(url);
+ let lx=pad,ly=top+H+18;ctx.font=lf;items.forEach(it=>{const w=17+ctx.measureText(it.t).width+18;if(lx+w>pad+W&&lx>pad){lx=pad;ly+=20;}ctx.fillStyle=it.c;ctx.fillRect(lx,ly-10,12,12);ctx.fillStyle=ink;ctx.fillText(it.t,lx+17,ly);lx+=w;});
+ ctx.fillStyle=ink3;ctx.font='11px '+FONT_STACK;ctx.fillText('ER Wait Watch · รหัสนักศึกษา 6970156130 · '+new Date().toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'}),pad,ch-pad+4);
+ return {canvas,title};
+}
+async function saveChart(id,fromLB,btn){
+ const old=btn?btn.innerHTML:'';if(btn){btn.disabled=true;btn.innerHTML=ICON_DL+'กำลังสร้างรูป…';}
+ try{const {canvas,title}=await renderChartPNG(id,fromLB);
+  const fname=(title||id).replace(/[\\/:*?"<>|#%]+/g,'').replace(/\s+/g,'_').slice(0,70)+'.png';
+  await new Promise(res=>canvas.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=fname;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();res();},800);},'image/png'));
+  if(btn){btn.innerHTML=ICON_DL+'บันทึกแล้ว';setTimeout(()=>{btn.innerHTML=old;btn.disabled=false;},1400);}
+ }catch(err){console.error(err);if(btn){btn.innerHTML=ICON_DL+'บันทึกไม่สำเร็จ';setTimeout(()=>{btn.innerHTML=old;btn.disabled=false;},2000);}}
+}
 
 const E=['var(--e1)','var(--e2)','var(--e3)','var(--e4)','var(--e5)'];
 function tile(lb,v,d,cls=''){return `<div class="tile ${cls}"><div class="lb">${lb}</div><div class="v ${cls?'hero':''}">${v}</div><div class="d">${d}</div></div>`;}
