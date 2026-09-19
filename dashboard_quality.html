@@ -120,6 +120,35 @@ header.top.headrow .headtext{display:grid;gap:6px;flex:1 1 520px;min-width:0}
 .card h2 .badge{font-size:11px;font-weight:600;color:var(--ink-3);margin-left:6px;letter-spacing:.04em}
 .alert{border-left-color:var(--crit)}
 .pareto-note{font-size:12.5px;color:var(--ink-2)}
+.tgroups{display:grid;gap:18px}
+.tgrp{display:grid;gap:10px}
+.tgrp-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding-bottom:6px;border-bottom:2px solid var(--line)}
+.tgrp-h h3{font-size:15px;font-weight:700;margin:0}
+.tgrp-h .tg-sub{font-size:13px;color:var(--ink-2)}
+.tblks{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:12px}
+.tblk{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);min-width:0}
+.tblk-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;background:var(--page);border-bottom:1px solid var(--line)}
+.tblk-h .esi{font-weight:700;font-size:14px}
+.tblk-h .tgt{font-size:12px;color:var(--ink-3)}
+.tblk-h .st{margin-left:auto}
+.tblk-story{padding:8px 12px 0;font-size:12.5px;color:var(--ink-2);line-height:1.45}
+.tblk table{font-size:12.5px;margin-top:4px}
+.tblk th{font-size:11px;padding:6px 8px;border-bottom:1px solid var(--grid);white-space:nowrap}
+.tblk td{padding:6px 8px;border-bottom:1px solid var(--grid)}
+.tblk tr:last-child td{border-bottom:0}
+.tblk tr.tot td{font-weight:700;background:var(--page)}
+.tblk tr.worst td:first-child{box-shadow:inset 4px 0 0 var(--crit)}
+.tblk tr.worst td{background:color-mix(in srgb,var(--crit) 6%,transparent)}
+.tblk td.over{color:var(--ink-1);font-weight:600}
+.pct{display:inline-grid;grid-template-columns:auto 56px;align-items:center;gap:7px;justify-content:end}
+.pct .bar{height:8px;border-radius:4px;background:var(--grid);overflow:hidden}
+.pct .bar i{display:block;height:100%;border-radius:4px}
+.st{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-1)}
+.st i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.tblk.calm .tblk-h{background:color-mix(in srgb,var(--good) 8%,var(--surface))}
+.tblk.watch .tblk-h{background:color-mix(in srgb,var(--warn) 12%,var(--surface))}
+.tblk.bad .tblk-h{background:color-mix(in srgb,var(--crit) 8%,var(--surface))}
+@media (max-width:480px){.tblks{grid-template-columns:1fr}.pct{grid-template-columns:auto 40px}}
 
 .topnav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line);margin:0 -16px;padding:0 16px}
 .topnav .in{max-width:1140px;margin:0 auto;display:flex;align-items:center;gap:4px;flex-wrap:wrap;min-height:46px}
@@ -193,8 +222,10 @@ header.top.headrow .headtext{display:grid;gap:6px;flex:1 1 520px;min-width:0}
 
 <div class="card wide">
  <h2>8. ตารางสรุป ESI × เวร <span class="badge">TABLE VIEW</span></h2>
- <p class="why">ค่าตัวเลขทั้งหมดที่อยู่ในกราฟด้านบน สำหรับอ้างอิงในรายงานและตรวจสอบย้อนกลับ</p>
- <div class="tablewrap"><table id="tbl"></table></div>
+ <p class="why">ตัวเลขทั้งหมดที่อยู่ในกราฟด้านบน จัดกลุ่มตามระดับความรุนแรงและสถานะของปัญหา — แถวที่มีแถบสีด้านซ้ายคือเวรที่แย่ที่สุดของระดับนั้น</p>
+ <div class="legend"><span><i style="background:var(--good)"></i>ผ่านเป้า (ทันเวลา ≥80%)</span><span><i style="background:var(--warn)"></i>ต่ำกว่าเป้า (50–79%)</span><span><i style="background:var(--crit)"></i>วิกฤต (&lt;50%)</span></div>
+ <div id="tbl" class="tgroups"></div>
+ <p class="note">แถบในคอลัมน์ % ทันเป้า ยาวตามร้อยละและใช้สีสถานะเดียวกับป้าย · เอาเมาส์วางบนค่า P90 เพื่อดูค่าเฉลี่ยและค่าสูงสุด · เวลาเป้าหมาย: ESI 1 ≤1 · ESI 2 ≤10 · ESI 3 ≤30 · ESI 4 ≤60 · ESI 5 ≤120 นาที</p>
 </div>
 
 <div class="grid">
@@ -449,11 +480,35 @@ function draw(){
  const ex=esiRows.map(e=>{const ii=idx.filter(i=>R.e[i]===e);return {e,min:ii.reduce((a,i)=>a+Math.max(0,R.w[i]-TGT[e]),0),n:ii.length};});const exTot=ex.reduce((a,b)=>a+b.min,0);
  reg('excess',(c,big)=>barsH(c,{labelW:big?80:60,padR:big?190:110,rowH:big?54:30,rows:ex.map(x=>({label:'ESI '+x.e,value:x.min,color:E[x.e-1],valueLabel:`${fmtN(x.min)} นาที (${fmtP(exTot?x.min/exTot:0)})`,tip:`<b>ESI ${x.e}</b><br>นาทีรอส่วนเกินรวม ${fmtN(x.min)} นาที = ${(x.min/60).toFixed(0)} ชั่วโมง<br>เฉลี่ย ${x.n?(x.min/x.n).toFixed(1):'–'} นาที/คน`})),aria:'excess minutes'}));
  document.getElementById('excess-note').textContent=`รวม ${fmtN(exTot)} นาที ≈ ${fmtN(exTot/60)} ชั่วโมงของการรอที่เกินเป้าหมาย · ESI 3 แม้ทันเป้า 83% แต่ผู้ป่วยกลุ่มหลุดทำให้นาทีส่วนเกินสูงเป็นอันดับ 2`;
- /* 8 table */
- let h='<thead><tr><th>ESI</th><th>เวร</th><th>n</th><th>มัธยฐาน</th><th>เฉลี่ย</th><th>P90</th><th>สูงสุด</th><th>% ทันเป้า</th><th>รอเกินเป้า</th><th>รอ >120 นาที</th></tr></thead><tbody>';
- esiRows.forEach(e=>[0,1,2,'all'].forEach(sh=>{const ii=idx.filter(i=>R.e[i]===e&&(sh==='all'||R.s[i]===sh));if(!ii.length)return;const s=st(ii);const mx=Math.max(...ii.map(i=>R.w[i]));
-  h+=`<tr${sh==='all'?' style="font-weight:600"':''}><td>ESI ${e}</td><td>${sh==='all'?'รวม':SH[sh]}</td><td>${fmtN(s.n)}</td><td>${fmtN(s.median)}</td><td>${s.mean.toFixed(1)}</td><td>${fmtN(s.p90)}</td><td>${fmtN(mx)}</td><td>${fmtP1(s.ok)}</td><td>${fmtN(s.over)}</td><td>${fmtN(s.over120)}</td></tr>`;}));
- h+=`<tr style="font-weight:700"><td>รวม</td><td>ทุกเวร</td><td>${fmtN(all.n)}</td><td>${fmtN(all.median)}</td><td>${all.mean==null?'–':all.mean.toFixed(1)}</td><td>${fmtN(all.p90)}</td><td>${idx.length?fmtN(Math.max(...idx.map(i=>R.w[i]))):'–'}</td><td>${fmtP1(all.ok)}</td><td>${fmtN(all.over)}</td><td>${fmtN(all.over120)}</td></tr></tbody>`;
+ /* 8 table: grouped story tables */
+ const band=p=>p==null?null:p>=.8?'good':p>=.5?'warn':'crit';
+ const bandName={good:'ผ่านเป้า',warn:'ต่ำกว่าเป้า',crit:'วิกฤต'};
+ const pill=p=>{const b=band(p);return b?`<span class="st"><i style="background:var(--${b})"></i>${bandName[b]} ${fmtP(p)}</span>`:'';};
+ const pctCell=p=>{const b=band(p)||'good';return `<span class="pct"><span>${fmtP1(p)}</span><span class="bar"><i style="width:${Math.round((p||0)*100)}%;background:var(--${b})"></i></span></span>`;};
+ const esiNameT={1:'วิกฤต',2:'ฉุกเฉิน',3:'เร่งด่วน',4:'กึ่งเร่งด่วน',5:'ไม่เร่งด่วน'};
+ function esiBlock(e){
+  const rows=[0,1,2].map(sh=>{const ii=idx.filter(i=>R.e[i]===e&&R.s[i]===sh);const s=st(ii);s.max=ii.length?Math.max(...ii.map(i=>R.w[i])):null;s.sh=sh;return s;}).filter(s=>s.n>0);
+  const ii=idx.filter(i=>R.e[i]===e);if(!ii.length)return '';const tot=st(ii);tot.max=Math.max(...ii.map(i=>R.w[i]));
+  const worst=rows.length>1?rows.reduce((a,b)=>(b.ok<a.ok||(b.ok===a.ok&&b.median>a.median))?b:a):null;
+  const b=band(tot.ok);const cls=b==='good'?'calm':b==='warn'?'watch':'bad';
+  let story;
+  if(tot.ok>=.995)story=`ทุกเวรได้รับการตรวจทันเป้าหมาย ไม่มีผู้ป่วยรอเกิน ${TGT[e]} นาที มัธยฐาน ${fmtN(tot.median)} นาที`;
+  else{story=`ทันเป้า ${fmtP(tot.ok)} · รอเกินเป้า ${fmtN(tot.over)} คน (${fmtP(tot.over/tot.n)})`;
+   if(worst&&worst.ok<tot.ok)story+=` · แย่ที่สุด <b>${SH[worst.sh]}</b> ทันเป้าเพียง ${fmtP1(worst.ok)} มัธยฐาน ${fmtN(worst.median)} นาที`;
+   if(e===3&&tot.over120>0)story+=` · <b>${fmtN(tot.over120)} คน (${fmtP1(tot.over120/tot.n)}) รอเกิน 120 นาที</b> ทั้งที่กลุ่มนี้ปกติรอ ${fmtN(tot.median)} นาที`;
+   if(e>=4&&tot.over120>0)story+=` · รอเกิน 2 ชั่วโมง ${fmtN(tot.over120)} คน`;}
+  const tr=(s,label,cls2)=>`<tr class="${cls2}"><td>${label}</td><td>${fmtN(s.n)}</td><td${s.median>TGT[e]?' class="over"':''}>${fmtN(s.median)}</td><td title="เฉลี่ย ${s.mean==null?'–':s.mean.toFixed(1)} นาที · สูงสุด ${fmtN(s.max)} นาที"${s.p90>TGT[e]?' class="over"':''}>${fmtN(s.p90)}</td><td>${pctCell(s.ok)}</td><td>${fmtN(s.over)}</td><td>${fmtN(s.over120)}</td></tr>`;
+  return `<div class="tblk ${cls}"><div class="tblk-h"><span class="esi">ESI ${e} ${esiNameT[e]}</span><span class="tgt">เป้า ≤${TGT[e]} นาที · n=${fmtN(tot.n)}</span><span style="margin-left:auto">${pill(tot.ok)}</span></div>
+   <div class="tblk-story">${story}</div>
+   <div class="tablewrap"><table><thead><tr><th>เวร</th><th>n</th><th>มัธยฐาน (นาที)</th><th>P90</th><th>% ทันเป้า</th><th>รอเกินเป้า</th><th>รอ &gt;120 นาที</th></tr></thead><tbody>
+   ${rows.map(s=>tr(s,SH[s.sh],worst&&s.sh===worst.sh&&tot.ok<.995?'worst':'')).join('')}${rows.length>1?tr(tot,'รวมทุกเวร','tot'):''}</tbody></table></div></div>`;
+ }
+ const groups=[
+  {t:'กลุ่มที่ระบบทำงานได้ดี',sub:'ผู้ป่วยวิกฤตและฉุกเฉินได้ตรวจทันที — ไม่ใช่ที่มาของข้อร้องเรียน',esi:[1,2]},
+  {t:'กลุ่มที่ต้องเฝ้าระวัง',sub:'ส่วนใหญ่ทันเป้า แต่มีผู้ป่วยส่วนน้อยรอนานผิดปกติ — ความเสี่ยงด้านความปลอดภัย',esi:[3]},
+  {t:'กลุ่มที่เป็นปัญหาหลัก',sub:'ผู้ป่วยไม่เร่งด่วนรอ 1.5–2 ชั่วโมง เวรบ่ายแย่ที่สุด — ที่มาของข้อร้องเรียน',esi:[4,5]}];
+ let h='';groups.forEach(g=>{const blocks=g.esi.map(esiBlock).filter(Boolean);if(!blocks.length)return;h+=`<section class="tgrp"><div class="tgrp-h"><h3>${g.t}</h3><span class="tg-sub">${g.sub}</span></div><div class="tblks">${blocks.join('')}</div></section>`;});
+ if(!h)h='<p class="note">ไม่มีข้อมูลตามตัวกรอง</p>';
  document.getElementById('tbl').innerHTML=h;
 }
 addEventListener('beforeprint',()=>{closeLB();draw();});addEventListener('afterprint',()=>draw());
