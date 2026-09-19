@@ -177,12 +177,12 @@ header.top.headrow .headtext{display:grid;gap:6px;flex:1 1 520px;min-width:0}
 
 <div class="card wide">
  <div class="fg" style="justify-content:space-between;align-items:flex-start">
-  <h2 style="margin:0">1. การกระจายเวลารอแยกตาม ESI <span class="badge" id="dist-badge">HISTOGRAM · ขั้นละ 10 นาที</span></h2>
-  <div class="fg"><span class="fl">มุมมอง</span><div class="seg metric" data-key="dist"><button data-v="hist" aria-pressed="true">ฮิสโตแกรม</button><button data-v="box">Box plot</button></div></div>
+  <h2 style="margin:0">1. การกระจายเวลารอแยกตาม ESI <span class="badge" id="dist-badge">BOX PLOT · Q1–Q3, มัธยฐาน, หนวด 1.5 IQR</span></h2>
+  <div class="fg"><span class="fl">มุมมอง</span><div class="seg metric" data-key="dist"><button data-v="box" aria-pressed="true">Box plot</button><button data-v="hist">ฮิสโตแกรม</button></div></div>
  </div>
  <p class="why" id="dist-why">ค่าเฉลี่ยซ่อนรูปร่างของปัญหา — ฮิสโตแกรมแสดงว่าผู้ป่วยแต่ละระดับ "รอแบบไหน": กระจุกตัวใกล้เป้า หรือมีกลุ่มหนึ่งที่หลุดไปรอนานผิดปกติ (เส้นดำ = เวลาเป้าหมาย)</p>
- <div class="hist-grid" id="hists"></div>
- <div id="boxwrap" hidden><div class="chart" id="boxplot"></div></div>
+ <div id="boxwrap"><div class="chart" id="boxplot"></div></div>
+ <div class="hist-grid" id="hists" hidden></div>
  <p class="note" id="hist-note"></p>
 </div>
 
@@ -514,7 +514,7 @@ const dates=new Array(N),dow=new Int8Array(N),mon=new Array(N),wk=new Array(N);
 const weekKeys=[];
 for(let i=0;i<N;i++){const dt=new Date(d0.getTime()+R.d[i]*86400000);dates[i]=dt;dow[i]=(dt.getDay()+6)%7;mon[i]=dt.toISOString().slice(0,7);const monday=new Date(dt.getTime()-dow[i]*86400000);wk[i]=monday.toISOString().slice(0,10);if(!weekKeys.includes(wk[i]))weekKeys.push(wk[i]);}
 weekKeys.sort();
-const F={month:'all',shift:'all',wd:'all',esi:'all',metric:'median',metric2:'vol',dist:'hist'};
+const F={month:'all',shift:'all',wd:'all',esi:'all',metric:'median',metric2:'vol',dist:'box'};
 function passes(i){if(F.month!=='all'&&mon[i]!==F.month)return false;if(F.shift!=='all'&&R.s[i]!==+F.shift)return false;if(F.wd==='wd'&&dow[i]>=5)return false;if(F.wd==='we'&&dow[i]<5)return false;if(F.esi!=='all'&&R.e[i]!==+F.esi)return false;return true;}
 const median=a=>{if(!a.length)return null;const b=[...a].sort((x,y)=>x-y);const m=b.length>>1;return b.length%2?b[m]:(b[m-1]+b[m])/2;};
 const quant=(a,p)=>{if(!a.length)return null;const b=[...a].sort((x,y)=>x-y);const k=(b.length-1)*p,f=Math.floor(k);return f+1<b.length?b[f]+(b[f+1]-b[f])*(k-f):b[f];};
