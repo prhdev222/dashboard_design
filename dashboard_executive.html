@@ -22,6 +22,7 @@
  --e1:#9ec5f4;--e2:#6da7ec;--e3:#3987e5;--e4:#256abf;--e5:#184f95;
  --good-text:#0ca30c;--tip-bg:#f5f5f2;--tip-ink:#101413;}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{margin:0;background:var(--page);color:var(--ink-1);font-family:"Sarabun","IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.55;padding-inline:16px;padding-block:0 40px}
 h1,h2,h3{font-family:"IBM Plex Sans Thai","Sarabun",system-ui,sans-serif;text-wrap:balance;margin:0}
 .wrap{max-width:1140px;margin:0 auto}
@@ -276,6 +277,35 @@ function heatmap(c,o){clear(c);const W=c.clientWidth||500,rowH=o.rowH||40,labelW
    hover(g,(o.tips&&o.tips[i]&&o.tips[i][j])||`<b>${r} · ${cl}</b><br>${o.fmt(v)}`);});});
 }
 
+/* horizontal box plot: rows [{label, s:{min,q1,med,q3,max,lo,hi,out:[],n}, color, target, tip}] */
+function boxplot(c,o){clear(c);const W=c.clientWidth||600,rowH=o.rowH||46,labelW=o.labelW||110,padR=o.padR||200,H=rowH*o.rows.length+30;
+ const s=el('svg',{viewBox:`0 0 ${W} ${H}`,width:'100%',height:H,role:'img','aria-label':o.aria||''},c);
+ const x0=labelW,x1=W-padR,max=o.max||niceMax(Math.max(...o.rows.map(r=>Math.max(r.s.max||0,r.target||0)))*1.04);
+ const sx=v=>x0+(x1-x0)*v/max;
+ const tk=ticks(max,6);tk.forEach((t,i)=>{el('line',{x1:sx(t),x2:sx(t),y1:4,y2:H-24,stroke:'var(--grid)','stroke-width':1},s);txt(s,sx(t),H-8,fmtN(t)+(i===tk.length-1?' นาที':''),{'text-anchor':i===tk.length-1?'end':'middle',fill:'var(--ink-3)','font-size':11});});
+ o.rows.forEach((r,i)=>{const yc=rowH*i+rowH/2,bh=Math.min(20,rowH*0.5),st=r.s;
+  txt(s,x0-8,yc+4,r.label,{'text-anchor':'end',fill:'var(--ink-1)','font-weight':600,'font-size':13});
+  const g=el('g',{},s);
+  el('rect',{x:x0,y:yc-rowH/2+2,width:x1-x0,height:rowH-4,fill:'transparent'},g);
+  /* outliers: deterministic vertical jitter */
+  (st.out||[]).forEach((v,k)=>{const h=(Math.imul(k+1,2654435761)>>>0)/4294967296;const j=(h-0.5)*bh*0.9;el('circle',{cx:sx(v),cy:yc+j,r:2.2,fill:r.color,opacity:.35},g);});
+  /* whiskers */
+  el('line',{x1:sx(st.lo),x2:sx(st.q1),y1:yc,y2:yc,stroke:r.color,'stroke-width':2},g);
+  el('line',{x1:sx(st.q3),x2:sx(st.hi),y1:yc,y2:yc,stroke:r.color,'stroke-width':2},g);
+  el('line',{x1:sx(st.lo),x2:sx(st.lo),y1:yc-bh/3,y2:yc+bh/3,stroke:r.color,'stroke-width':2},g);
+  el('line',{x1:sx(st.hi),x2:sx(st.hi),y1:yc-bh/3,y2:yc+bh/3,stroke:r.color,'stroke-width':2},g);
+  /* box */
+  const bw=Math.max(2,sx(st.q3)-sx(st.q1));
+  el('rect',{x:sx(st.q1),y:yc-bh/2,width:bw,height:bh,rx:3,fill:r.color,stroke:'var(--surface)','stroke-width':1},g);
+  el('line',{x1:sx(st.med),x2:sx(st.med),y1:yc-bh/2-3,y2:yc+bh/2+3,stroke:'var(--surface)','stroke-width':4},g);
+  el('line',{x1:sx(st.med),x2:sx(st.med),y1:yc-bh/2-3,y2:yc+bh/2+3,stroke:'var(--ink-1)','stroke-width':2},g);
+  if(r.target!=null){el('line',{x1:sx(r.target),x2:sx(r.target),y1:yc-rowH/2+4,y2:yc+rowH/2-4,stroke:'var(--ink-1)','stroke-width':1.5,'stroke-dasharray':'3 3'},g);}
+  txt(s,x1+10,yc-3,`มัธยฐาน ${fmtN(st.med)} · IQR ${fmtN(st.q1)}–${fmtN(st.q3)}`,{fill:'var(--ink-1)','font-size':11.5,'font-weight':600});
+  txt(s,x1+10,yc+11,`หนวด ${fmtN(st.lo)}–${fmtN(st.hi)} · outlier ${fmtN((st.out||[]).length)} คน`,{fill:'var(--ink-3)','font-size':11});
+  hover(g,r.tip||`<b>${r.label}</b><br>มัธยฐาน ${fmtN(st.med)} นาที`);
+ });
+ el('line',{x1:x0,x2:x0,y1:4,y2:H-24,stroke:'var(--axis)','stroke-width':1},s);
+}
 /* ---- click-to-enlarge ---- */
 const REG={};
 function reg(id,fn){REG[id]=fn;const c=document.getElementById(id);if(!c)return;if(!c.dataset.lb){c.dataset.lb='1';c.classList.add('zoomable');c.title='คลิกเพื่อขยาย';c.addEventListener('click',e=>{if(e.target.closest('.legend'))return;openLB(id);});

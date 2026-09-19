@@ -22,6 +22,7 @@
  --e1:#9ec5f4;--e2:#6da7ec;--e3:#3987e5;--e4:#256abf;--e5:#184f95;
  --good-text:#0ca30c;--tip-bg:#f5f5f2;--tip-ink:#101413;}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{margin:0;background:var(--page);color:var(--ink-1);font-family:"Sarabun","IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.55;padding-inline:16px;padding-block:0 40px}
 h1,h2,h3{font-family:"IBM Plex Sans Thai","Sarabun",system-ui,sans-serif;text-wrap:balance;margin:0}
 .wrap{max-width:1140px;margin:0 auto}
@@ -175,9 +176,13 @@ header.top.headrow .headtext{display:grid;gap:6px;flex:1 1 520px;min-width:0}
 <section class="kpis" id="kpis"></section>
 
 <div class="card wide">
- <h2>1. การกระจายเวลารอแยกตาม ESI <span class="badge">HISTOGRAM · ขั้นละ 10 นาที</span></h2>
- <p class="why">ค่าเฉลี่ยซ่อนรูปร่างของปัญหา — ฮิสโตแกรมแสดงว่าผู้ป่วยแต่ละระดับ "รอแบบไหน": กระจุกตัวใกล้เป้า หรือมีกลุ่มหนึ่งที่หลุดไปรอนานผิดปกติ (เส้นดำ = เวลาเป้าหมาย)</p>
+ <div class="fg" style="justify-content:space-between;align-items:flex-start">
+  <h2 style="margin:0">1. การกระจายเวลารอแยกตาม ESI <span class="badge" id="dist-badge">HISTOGRAM · ขั้นละ 10 นาที</span></h2>
+  <div class="fg"><span class="fl">มุมมอง</span><div class="seg metric" data-key="dist"><button data-v="hist" aria-pressed="true">ฮิสโตแกรม</button><button data-v="box">Box plot</button></div></div>
+ </div>
+ <p class="why" id="dist-why">ค่าเฉลี่ยซ่อนรูปร่างของปัญหา — ฮิสโตแกรมแสดงว่าผู้ป่วยแต่ละระดับ "รอแบบไหน": กระจุกตัวใกล้เป้า หรือมีกลุ่มหนึ่งที่หลุดไปรอนานผิดปกติ (เส้นดำ = เวลาเป้าหมาย)</p>
  <div class="hist-grid" id="hists"></div>
+ <div id="boxwrap" hidden><div class="chart" id="boxplot"></div></div>
  <p class="note" id="hist-note"></p>
 </div>
 
@@ -354,6 +359,35 @@ function heatmap(c,o){clear(c);const W=c.clientWidth||500,rowH=o.rowH||40,labelW
    hover(g,(o.tips&&o.tips[i]&&o.tips[i][j])||`<b>${r} · ${cl}</b><br>${o.fmt(v)}`);});});
 }
 
+/* horizontal box plot: rows [{label, s:{min,q1,med,q3,max,lo,hi,out:[],n}, color, target, tip}] */
+function boxplot(c,o){clear(c);const W=c.clientWidth||600,rowH=o.rowH||46,labelW=o.labelW||110,padR=o.padR||200,H=rowH*o.rows.length+30;
+ const s=el('svg',{viewBox:`0 0 ${W} ${H}`,width:'100%',height:H,role:'img','aria-label':o.aria||''},c);
+ const x0=labelW,x1=W-padR,max=o.max||niceMax(Math.max(...o.rows.map(r=>Math.max(r.s.max||0,r.target||0)))*1.04);
+ const sx=v=>x0+(x1-x0)*v/max;
+ const tk=ticks(max,6);tk.forEach((t,i)=>{el('line',{x1:sx(t),x2:sx(t),y1:4,y2:H-24,stroke:'var(--grid)','stroke-width':1},s);txt(s,sx(t),H-8,fmtN(t)+(i===tk.length-1?' นาที':''),{'text-anchor':i===tk.length-1?'end':'middle',fill:'var(--ink-3)','font-size':11});});
+ o.rows.forEach((r,i)=>{const yc=rowH*i+rowH/2,bh=Math.min(20,rowH*0.5),st=r.s;
+  txt(s,x0-8,yc+4,r.label,{'text-anchor':'end',fill:'var(--ink-1)','font-weight':600,'font-size':13});
+  const g=el('g',{},s);
+  el('rect',{x:x0,y:yc-rowH/2+2,width:x1-x0,height:rowH-4,fill:'transparent'},g);
+  /* outliers: deterministic vertical jitter */
+  (st.out||[]).forEach((v,k)=>{const h=(Math.imul(k+1,2654435761)>>>0)/4294967296;const j=(h-0.5)*bh*0.9;el('circle',{cx:sx(v),cy:yc+j,r:2.2,fill:r.color,opacity:.35},g);});
+  /* whiskers */
+  el('line',{x1:sx(st.lo),x2:sx(st.q1),y1:yc,y2:yc,stroke:r.color,'stroke-width':2},g);
+  el('line',{x1:sx(st.q3),x2:sx(st.hi),y1:yc,y2:yc,stroke:r.color,'stroke-width':2},g);
+  el('line',{x1:sx(st.lo),x2:sx(st.lo),y1:yc-bh/3,y2:yc+bh/3,stroke:r.color,'stroke-width':2},g);
+  el('line',{x1:sx(st.hi),x2:sx(st.hi),y1:yc-bh/3,y2:yc+bh/3,stroke:r.color,'stroke-width':2},g);
+  /* box */
+  const bw=Math.max(2,sx(st.q3)-sx(st.q1));
+  el('rect',{x:sx(st.q1),y:yc-bh/2,width:bw,height:bh,rx:3,fill:r.color,stroke:'var(--surface)','stroke-width':1},g);
+  el('line',{x1:sx(st.med),x2:sx(st.med),y1:yc-bh/2-3,y2:yc+bh/2+3,stroke:'var(--surface)','stroke-width':4},g);
+  el('line',{x1:sx(st.med),x2:sx(st.med),y1:yc-bh/2-3,y2:yc+bh/2+3,stroke:'var(--ink-1)','stroke-width':2},g);
+  if(r.target!=null){el('line',{x1:sx(r.target),x2:sx(r.target),y1:yc-rowH/2+4,y2:yc+rowH/2-4,stroke:'var(--ink-1)','stroke-width':1.5,'stroke-dasharray':'3 3'},g);}
+  txt(s,x1+10,yc-3,`มัธยฐาน ${fmtN(st.med)} · IQR ${fmtN(st.q1)}–${fmtN(st.q3)}`,{fill:'var(--ink-1)','font-size':11.5,'font-weight':600});
+  txt(s,x1+10,yc+11,`หนวด ${fmtN(st.lo)}–${fmtN(st.hi)} · outlier ${fmtN((st.out||[]).length)} คน`,{fill:'var(--ink-3)','font-size':11});
+  hover(g,r.tip||`<b>${r.label}</b><br>มัธยฐาน ${fmtN(st.med)} นาที`);
+ });
+ el('line',{x1:x0,x2:x0,y1:4,y2:H-24,stroke:'var(--axis)','stroke-width':1},s);
+}
 /* ---- click-to-enlarge ---- */
 const REG={};
 function reg(id,fn){REG[id]=fn;const c=document.getElementById(id);if(!c)return;if(!c.dataset.lb){c.dataset.lb='1';c.classList.add('zoomable');c.title='คลิกเพื่อขยาย';c.addEventListener('click',e=>{if(e.target.closest('.legend'))return;openLB(id);});
@@ -432,7 +466,7 @@ const dates=new Array(N),dow=new Int8Array(N),mon=new Array(N),wk=new Array(N);
 const weekKeys=[];
 for(let i=0;i<N;i++){const dt=new Date(d0.getTime()+R.d[i]*86400000);dates[i]=dt;dow[i]=(dt.getDay()+6)%7;mon[i]=dt.toISOString().slice(0,7);const monday=new Date(dt.getTime()-dow[i]*86400000);wk[i]=monday.toISOString().slice(0,10);if(!weekKeys.includes(wk[i]))weekKeys.push(wk[i]);}
 weekKeys.sort();
-const F={month:'all',shift:'all',wd:'all',esi:'all',metric:'median',metric2:'vol'};
+const F={month:'all',shift:'all',wd:'all',esi:'all',metric:'median',metric2:'vol',dist:'hist'};
 function passes(i){if(F.month!=='all'&&mon[i]!==F.month)return false;if(F.shift!=='all'&&R.s[i]!==+F.shift)return false;if(F.wd==='wd'&&dow[i]>=5)return false;if(F.wd==='we'&&dow[i]<5)return false;if(F.esi!=='all'&&R.e[i]!==+F.esi)return false;return true;}
 const median=a=>{if(!a.length)return null;const b=[...a].sort((x,y)=>x-y);const m=b.length>>1;return b.length%2?b[m]:(b[m-1]+b[m])/2;};
 const quant=(a,p)=>{if(!a.length)return null;const b=[...a].sort((x,y)=>x-y);const k=(b.length-1)*p,f=Math.floor(k);return f+1<b.length?b[f]+(b[f+1]-b[f])*(k-f):b[f];};
@@ -455,7 +489,25 @@ function draw(){
   if(e===3&&s.n){const tail=ii.filter(i=>R.w[i]>120).length;note.push(`ESI 3: ${fmtN(tail)} คน (${fmtP1(tail/s.n)}) รอเกิน 120 นาที ทั้งที่ 83% ของกลุ่มรอไม่เกิน 30 นาที — การกระจายแบบสองยอด (bimodal) บ่งชี้ว่ามีผู้ป่วยกลุ่มหนึ่ง "หลุด" จากระบบเรียกตรวจ`);}
   if(e===4&&s.n){note.push(`ESI 4: ${fmtP(1-s.ok)} รอเกิน 60 นาที การกระจายเลื่อนไปทางขวาทั้งก้อน (ไม่ใช่แค่หาง) = ความสามารถของระบบไม่พอ`);}
  }
- document.getElementById('hist-note').textContent='สีเทา = ทันเป้า · สีน้ำเงิน = เกินเป้า · '+note.join(' · ');
+ const isBox=F.dist==='box';
+ document.getElementById('hists').hidden=isBox;document.getElementById('boxwrap').hidden=!isBox;
+ document.getElementById('dist-badge').textContent=isBox?'BOX PLOT · Q1–Q3, มัธยฐาน, หนวด 1.5 IQR':'HISTOGRAM · ขั้นละ 10 นาที';
+ document.getElementById('dist-why').textContent=isBox?'Box plot สรุปการกระจายทั้งห้าระดับบนแกนเวลาเดียวกัน จึงเปรียบเทียบ "ค่ากลาง" และ "ความกว้างของการรอ" ข้ามระดับได้ทันที — กล่อง = ผู้ป่วย 50% ตรงกลาง (Q1–Q3) · เส้นดำในกล่อง = มัธยฐาน · หนวด = ค่าปกติไม่เกิน 1.5 เท่าของ IQR · จุด = ผู้ป่วยที่รอนานผิดปกติ (outlier) · เส้นประ = เวลาเป้าหมาย':'ค่าเฉลี่ยซ่อนรูปร่างของปัญหา — ฮิสโตแกรมแสดงว่าผู้ป่วยแต่ละระดับ "รอแบบไหน": กระจุกตัวใกล้เป้า หรือมีกลุ่มหนึ่งที่หลุดไปรอนานผิดปกติ (เส้นดำ = เวลาเป้าหมาย)';
+ if(isBox){
+  const rows=[];let boxNote=[];
+  for(let e=1;e<=5;e++){const w=idx.filter(i=>R.e[i]===e).map(i=>R.w[i]);if(!w.length)continue;const b=[...w].sort((x,y)=>x-y);
+   const q1=quant(b,.25),med=quant(b,.5),q3=quant(b,.75),iqr=q3-q1;const loB=q1-1.5*iqr,hiB=q3+1.5*iqr;
+   const inl=b.filter(x=>x>=loB&&x<=hiB);const lo=inl.length?inl[0]:b[0],hi=inl.length?inl[inl.length-1]:b[b.length-1];const out=b.filter(x=>x<loB||x>hiB);
+   const st={min:b[0],q1,med,q3,max:b[b.length-1],lo,hi,out,n:b.length};
+   rows.push({label:`ESI ${e}`,s:st,color:E[e-1],target:TGT[e],tip:`<b>ESI ${e}</b> · n=${fmtN(b.length)} · เป้า ≤${TGT[e]} นาที<br>ต่ำสุด ${fmtN(st.min)} · Q1 ${fmtN(q1)} · <b>มัธยฐาน ${fmtN(med)}</b> · Q3 ${fmtN(q3)} · สูงสุด ${fmtN(st.max)}<br>IQR ${fmtN(iqr)} นาที · หนวด ${fmtN(lo)}–${fmtN(hi)}<br>outlier ${fmtN(out.length)} คน (${fmtP1(out.length/b.length)})`});
+   if(e===3&&out.length){const far=out.filter(x=>x>120).length;boxNote.push(`ESI 3: กล่องแคบมาก (IQR ${fmtN(iqr)} นาที) จึงมี outlier ${fmtN(out.length)} คน โดย ${fmtN(far)} คนลอยห่างออกไปที่ 120–220 นาที = กลุ่มที่หลุดจากระบบ`);}
+   if(e===4)boxNote.push(`ESI 4: ทั้งกล่อง (${fmtN(q1)}–${fmtN(q3)} นาที) อยู่เหนือเส้นเป้า 60 นาที = ปัญหาทั้งระบบ ไม่ใช่แค่ผู้ป่วยส่วนน้อย`);
+   if(e===5)boxNote.push(`ESI 5: มัธยฐาน ${fmtN(med)} นาที คร่อมเส้นเป้า 120 พอดี ครึ่งหนึ่งของผู้ป่วยจึงเกินเป้า`);}
+  reg('boxplot',(c,big)=>boxplot(c,{rows,rowH:big?70:48,labelW:big?110:70,padR:big?260:210,aria:'box plot เวลารอแยกตาม ESI'}));
+  document.getElementById('hist-note').textContent=boxNote.join(' · ');
+ } else {
+  document.getElementById('hist-note').textContent='สีเทา = ทันเป้า · สีน้ำเงิน = เกินเป้า · '+note.join(' · ');
+ }
  /* 2 heatmap ESI x shift */
  const esiRows=[1,2,3,4,5],m=F.metric;const vals=[],tips=[];
  esiRows.forEach(e=>{const row=[],tr=[];[0,1,2].forEach(sh=>{const s=st(idx.filter(i=>R.e[i]===e&&R.s[i]===sh));row.push(s.n?(m==='median'?s.median:m==='p90'?s.p90:m==='ok'?s.ok:s.over):null);tr.push(`<b>ESI ${e} · ${SH[sh]}</b> · n=${fmtN(s.n)}<br>มัธยฐาน ${fmtN(s.median)} · P90 ${fmtN(s.p90)} นาที<br>ทันเป้า ${fmtP1(s.ok)} · เกินเป้า ${fmtN(s.over)} คน`);});vals.push(row);tips.push(tr);});
