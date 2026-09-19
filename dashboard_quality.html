@@ -121,6 +121,7 @@ header.top.headrow .headtext{display:grid;gap:6px;flex:1 1 520px;min-width:0}
 .card h2 .badge{font-size:11px;font-weight:600;color:var(--ink-3);margin-left:6px;letter-spacing:.04em}
 .alert{border-left-color:var(--crit)}
 .pareto-note{font-size:12.5px;color:var(--ink-2)}
+.spc-intro .legend i{vertical-align:middle}
 .tgroups{display:grid;gap:18px}
 .tgrp{display:grid;gap:10px}
 .tgrp-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding-bottom:6px;border-bottom:2px solid var(--line)}
@@ -170,6 +171,7 @@ header.top.headrow .headtext{display:grid;gap:6px;flex:1 1 520px;min-width:0}
  <div class="fg"><span class="fl">เวร</span><div class="seg" data-key="shift"><button data-v="all" aria-pressed="true">ทั้งหมด</button><button data-v="0">เช้า</button><button data-v="1">บ่าย</button><button data-v="2">ดึก</button></div></div>
  <div class="fg"><span class="fl">วัน</span><div class="seg" data-key="wd"><button data-v="all" aria-pressed="true">ทั้งหมด</button><button data-v="wd">จันทร์–ศุกร์</button><button data-v="we">เสาร์–อาทิตย์</button></div></div>
  <div class="fg"><span class="fl">ESI</span><div class="seg" data-key="esi"><button data-v="all" aria-pressed="true">ทั้งหมด</button><button data-v="1">1</button><button data-v="2">2</button><button data-v="3">3</button><button data-v="4">4</button><button data-v="5">5</button></div></div>
+ <div class="fg"><span class="fl">SPC</span><div class="seg" data-key="period"><button data-v="week" aria-pressed="true">รายสัปดาห์</button><button data-v="day">รายวัน</button></div></div>
  <div class="fn" id="fn"></div>
 </div>
 
@@ -201,24 +203,44 @@ header.top.headrow .headtext{display:grid;gap:6px;flex:1 1 520px;min-width:0}
   <div class="chart" id="hm-dw"></div>
   <p class="note">เวรบ่ายเข้มทุกวัน (33–35 คน/เวร) ส่วนวันเสาร์–อาทิตย์สูงกว่าวันธรรมดาเล็กน้อย</p>
  </div>
- <div class="card">
-  <h2>4. Run chart รายสัปดาห์: P90 เวลารอ <span class="badge">RUN CHART</span></h2>
-  <p class="why">ดูว่ากระบวนการ "นิ่ง" หรือมีแนวโน้ม/การเปลี่ยนแปลงพิเศษ — เส้นประคือค่ามัธยฐานของทุกสัปดาห์ (centerline) ใช้เป็น baseline วัดผลหลังปรับปรุง</p>
-  <div class="chart" id="run-p90"></div>
+ <div class="card wide spc-intro">
+  <h2>4–7. Statistical Process Control (SPC) <span class="badge">CONTROL CHARTS</span></h2>
+  <p class="why">control chart = run chart ที่เพิ่ม "ขีดจำกัดควบคุม" (UCL/LCL = เส้นกลาง ± 3σ) และกฎตรวจจับสัญญาณ ทำให้แยกได้ว่าการแกว่งเป็นความแปรปรวนปกติของระบบ (common cause → ต้องแก้ที่ระบบ) หรือมีเหตุพิเศษ (special cause → ต้องลงไปหาสาเหตุเฉพาะจุด) ขีดจำกัดจาก 3 เดือนนี้ใช้เป็น baseline แช่แข็งไว้เทียบกับข้อมูลหลังปรับปรุง</p>
+  <div class="legend"><span><i style="background:var(--accent)"></i>ค่าจริง (จุดกลวง = ช่วงไม่เต็ม ไม่ใช้คำนวณขีดจำกัด)</span><span><i style="background:var(--crit);border-radius:50%"></i>จุดที่ผิดกฎ (special cause)</span><span><i style="background:var(--ink-1);height:2px;border-radius:0"></i>CL เส้นกลาง</span><span><i style="background:var(--crit);height:2px;border-radius:0"></i>UCL / LCL (±3σ)</span><span><i style="background:var(--ink-3);height:1px;border-radius:0"></i>±2σ</span><span><i style="background:var(--good);height:2px;border-radius:0"></i>เป้าหมาย</span></div>
+  <p class="note">กฎที่ใช้ (Nelson/Western Electric แบบย่อ): 1) จุดนอกขีด 3σ · 2) 8 จุดติดกันด้านเดียวของเส้นกลาง · 3) 6 จุดติดกันเป็นแนวโน้มขึ้นหรือลง · 4) 2 ใน 3 จุดติดกันเกิน 2σ ด้านเดียว · p-chart และ u-chart มีขีดจำกัดเป็นขั้นบันไดตามจำนวนผู้ป่วยในแต่ละช่วง (n น้อย → ขีดกว้าง) · ข้อมูลมีเพียง 3 เดือน (10 สัปดาห์ที่มีข้อมูลครบ 7 วัน ตำราแนะนำ 20–25 จุด) จึงเป็น <b>trial limits</b> ที่ต้องคำนวณใหม่เมื่อมีข้อมูลมากขึ้น</p>
  </div>
  <div class="card">
-  <h2>5. Run chart รายสัปดาห์: % ผู้ป่วยทันเป้าหมาย <span class="badge">RUN CHART</span></h2>
-  <p class="why">ตัวชี้วัดผลลัพธ์ที่จะใช้ติดตาม PDSA — ปัจจุบันแกว่งแคบ ๆ รอบ 60% ไม่มีจุดใดข้ามเส้น 80%</p>
-  <div class="chart" id="run-ok"></div>
+  <h2>4. XmR chart: P90 เวลารอ <span class="badge">I-MR · นาที</span></h2>
+  <p class="why">ค่าเดียวต่อช่วงเวลา จึงใช้ Individuals chart ขีดจำกัด = ค่าเฉลี่ย ± 2.66 × moving range เฉลี่ย ไม่ต้องสมมติการแจกแจง</p>
+  <div class="chart" id="spc-p90"></div>
+  <p class="note" id="spc-p90-note"></p>
  </div>
  <div class="card">
-  <h2>6. Pareto: ใครรอเกินเป้ามากที่สุด <span class="badge">PARETO</span></h2>
+  <h2>5. p-chart: % ผู้ป่วยทันเวลาเป้าหมาย <span class="badge">p-chart · ทุก ESI</span></h2>
+  <p class="why">ตัวชี้วัดผลลัพธ์หลัก เป็นสัดส่วนที่จำนวนผู้ป่วยแต่ละช่วงไม่เท่ากัน ขีดจำกัดจึงคำนวณจาก p̄ ± 3√(p̄(1−p̄)/nᵢ) เทียบกับเป้าหมาย 80%</p>
+  <div class="chart" id="spc-ok"></div>
+  <p class="note" id="spc-ok-note"></p>
+ </div>
+ <div class="card">
+  <h2>6. p-chart: ESI 4 ทันเป้า ≤60 นาที <span class="badge">p-chart · KPI มาตรการ Fast-track</span></h2>
+  <p class="why">แยกกลุ่มปัญหาหลักออกมาเพื่อไม่ให้สัดส่วน ESI ที่เปลี่ยนไปแต่ละสัปดาห์บดบังผล — chart นี้ใช้ตัวกรอง เดือน/เวร/วัน แต่ไม่ใช้ตัวกรอง ESI</p>
+  <div class="chart" id="spc-e4"></div>
+  <p class="note" id="spc-e4-note"></p>
+ </div>
+ <div class="card">
+  <h2>7. u-chart: ESI 3 รอเกิน 120 นาที ต่อ 100 คน <span class="badge">u-chart · ตัวชี้วัดความปลอดภัย</span></h2>
+  <p class="why">อัตราของเหตุการณ์ไม่พึงประสงค์ต่อจำนวนผู้ป่วย ESI 3 ขีดจำกัด = ū ± 3√(ū/nᵢ) เป้าหมายคือ 0 — chart นี้ไม่ใช้ตัวกรอง ESI</p>
+  <div class="chart" id="spc-e3"></div>
+  <p class="note" id="spc-e3-note"></p>
+ </div>
+ <div class="card">
+  <h2>8. Pareto: ใครรอเกินเป้ามากที่สุด <span class="badge">PARETO</span></h2>
   <p class="why">จัดลำดับกลุ่ม ESI × เวร ตามจำนวนผู้ป่วยที่รอเกินเป้า พร้อมสะสม % — บอกว่าแก้ 3–4 กลุ่มแรกครอบคลุมปัญหาแค่ไหน</p>
   <div class="chart" id="pareto"></div>
   <p class="pareto-note" id="pareto-note"></p>
  </div>
  <div class="card">
-  <h2>7. นาทีรอส่วนเกินสะสม แยกตาม ESI <span class="badge">BAR</span></h2>
+  <h2>9. นาทีรอส่วนเกินสะสม แยกตาม ESI <span class="badge">BAR</span></h2>
   <p class="why">รวม (เวลารอ − เป้าหมาย) เฉพาะส่วนที่เกิน — วัด "ภาระ" ของการรอที่ผู้ป่วยแต่ละกลุ่มแบกรับ ใช้จัดลำดับความคุ้มค่าของมาตรการ</p>
   <div class="chart" id="excess"></div>
   <p class="note" id="excess-note"></p>
@@ -226,7 +248,7 @@ header.top.headrow .headtext{display:grid;gap:6px;flex:1 1 520px;min-width:0}
 </div>
 
 <div class="card wide">
- <h2>8. ตารางสรุป ESI × เวร <span class="badge">TABLE VIEW</span></h2>
+ <h2>10. ตารางสรุป ESI × เวร <span class="badge">TABLE VIEW</span></h2>
  <p class="why">ตัวเลขทั้งหมดที่อยู่ในกราฟด้านบน จัดกลุ่มตามระดับความรุนแรงและสถานะของปัญหา — แถวที่มีแถบสีด้านซ้ายคือเวรที่แย่ที่สุดของระดับนั้น</p>
  <div class="legend"><span><i style="background:var(--good)"></i>ผ่านเป้า (ทันเวลา ≥80%)</span><span><i style="background:var(--warn)"></i>ต่ำกว่าเป้า (50–79%)</span><span><i style="background:var(--crit)"></i>วิกฤต (&lt;50%)</span></div>
  <div id="tbl" class="tgroups"></div>
@@ -245,8 +267,8 @@ header.top.headrow .headtext{display:grid;gap:6px;flex:1 1 520px;min-width:0}
  <div class="msg">
   <h2>ตัวชี้วัดที่แนะนำให้ติดตามหลังปรับปรุง (รายสัปดาห์)</h2>
   <ul>
-   <li><b>Outcome:</b> % ผู้ป่วยทันเป้าหมายรวม ≥80% · P90 เวลารอ ESI 4 ≤90 นาที · ESI 5 ≤150 นาที</li>
-   <li><b>Safety:</b> จำนวน ESI 3 ที่รอเกิน 60 นาที = 0 (ปัจจุบัน ≈ 20 คน/สัปดาห์)</li>
+   <li><b>Outcome:</b> % ผู้ป่วยทันเป้าหมายรวม ≥80% (p-chart หัวข้อ 5) · P90 เวลารอ (XmR หัวข้อ 4) · ESI 4 ทันเป้า (p-chart หัวข้อ 6)</li>
+   <li><b>Safety:</b> ESI 3 รอเกิน 120 นาที = 0 ต่อ 100 คน (u-chart หัวข้อ 7 ปัจจุบัน ≈ 10 ต่อ 100)</li>
    <li><b>Process:</b> สัดส่วนผู้ป่วย ESI 4–5 ที่เข้า Fast-track · เวลารอ door-to-triage · จำนวน re-triage ที่บันทึก</li>
    <li><b>Balancing:</b> เวลารอ ESI 1–2 ต้องไม่แย่ลง (ปัจจุบัน ≤3 นาที ทุกราย) · อัตรา LWBS (ไม่รอตรวจ) ถ้ามีข้อมูล</li>
   </ul>
@@ -320,7 +342,7 @@ function lines(c,o){clear(c);const W=c.clientWidth||600,H=o.height||220,padL=44,
  const y0=H-padB,sy=v=>y0-(y0-padT)*(v-min)/(max-min),n=o.x.length,sx=i=>padL+(W-padL-padR)*(n<2?0.5:i/(n-1));
  ticks(max-min,4).forEach(t=>{const v=t+min;el('line',{x1:padL,x2:W-padR,y1:sy(v),y2:sy(v),stroke:'var(--grid)','stroke-width':1},s);txt(s,padL-6,sy(v)+4,o.fmtTick?o.fmtTick(v):fmtN(v),{'text-anchor':'end',fill:'var(--ink-3)','font-size':11});});
  (o.refs||[]).forEach(r=>{el('line',{x1:padL,x2:W-padR,y1:sy(r.y),y2:sy(r.y),stroke:r.color||'var(--ink-1)','stroke-width':1.5,'stroke-dasharray':'4 3'},s);txt(s,W-padR-4,sy(r.y)-5,r.label,{'text-anchor':'end',fill:'var(--ink-1)','font-size':11,'font-weight':600});});
- const step=Math.ceil(n/(o.maxTicks||7));o.x.forEach((lb,i)=>{if(i%step===0)txt(s,sx(i),H-8,lb,{'text-anchor':'middle',fill:'var(--ink-3)','font-size':11});});
+ const step=Math.max(1,Math.ceil(n/Math.max(2,Math.floor((W-padL-padR)/56))));o.x.forEach((lb,i)=>{if(i%step===0)txt(s,sx(i),H-8,lb,{'text-anchor':'middle',fill:'var(--ink-3)','font-size':11});});
  o.series.forEach(sr=>{if(sr.area){const d='M'+sr.values.map((v,i)=>`${sx(i)},${sy(v)}`).join('L')+`L${sx(n-1)},${y0}L${sx(0)},${y0}Z`;el('path',{d,fill:sr.color,opacity:.1},s);}
   const d='M'+sr.values.map((v,i)=>`${sx(i)},${sy(v)}`).join('L');el('path',{d,fill:'none',stroke:sr.color,'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'},s);
   const last=sr.values[n-1];el('circle',{cx:sx(n-1),cy:sy(last),r:4.5,fill:sr.color,stroke:'var(--surface)','stroke-width':2},s);
@@ -387,6 +409,54 @@ function boxplot(c,o){clear(c);const W=c.clientWidth||600,rowH=o.rowH||46,labelW
   hover(g,r.tip||`<b>${r.label}</b><br>มัธยฐาน ${fmtN(st.med)} นาที`);
  });
  el('line',{x1:x0,x2:x0,y1:4,y2:H-24,stroke:'var(--axis)','stroke-width':1},s);
+}
+/* SPC control chart. o={x,v,n?,k?,type:'xmr'|'p'|'u',partial?,scale?,fmtVal,fmtTick,refs?,height,padR,aria}
+   p/u limits are stepped by subgroup size; limits are computed from non-partial points only. Returns stats. */
+function spcStats(o){const N=o.v.length,full=o.partial?o.partial.map(p=>!p):o.v.map(()=>true);const sc=o.scale||1;
+ let CL,sig=new Array(N).fill(0),nFull=0;
+ if(o.type==='xmr'){const xs=o.v.filter((_,i)=>full[i]);nFull=xs.length;CL=xs.reduce((a,b)=>a+b,0)/Math.max(1,xs.length);const mrs=[];for(let i=1;i<xs.length;i++)mrs.push(Math.abs(xs[i]-xs[i-1]));const MR=mrs.length?mrs.reduce((a,b)=>a+b,0)/mrs.length:0;const s=2.66*MR/3;sig.fill(s);}
+ else{let K=0,Nn=0;for(let i=0;i<N;i++)if(full[i]){K+=o.k[i];Nn+=o.n[i];nFull++;}const pu=Nn?K/Nn:0;CL=pu*sc;
+  for(let i=0;i<N;i++){const s=o.type==='p'?Math.sqrt(Math.max(0,pu*(1-pu))/Math.max(1,o.n[i])):Math.sqrt(pu/Math.max(1,o.n[i]));sig[i]=s*sc;}}
+ const UCL=sig.map(s=>o.type==='p'?Math.min(sc,CL+3*s):CL+3*s),LCL=sig.map(s=>Math.max(0,CL-3*s));
+ const z=o.v.map((x,i)=>sig[i]>0?(x-CL)/sig[i]:0);
+ const viol=o.v.map(()=>[]);
+ for(let i=0;i<N;i++){if(Math.abs(z[i])>3)viol[i].push('1: นอกขีดจำกัด 3σ');}
+ for(let i=7;i<N;i++){const w=z.slice(i-7,i+1);if(w.every(a=>a>0)||w.every(a=>a<0))for(let j=i-7;j<=i;j++)if(!viol[j].includes('2: 8 จุดติดกันด้านเดียว'))viol[j].push('2: 8 จุดติดกันด้านเดียว');}
+ for(let i=5;i<N;i++){let up=true,dn=true;for(let j=i-4;j<=i;j++){if(!(o.v[j]>o.v[j-1]))up=false;if(!(o.v[j]<o.v[j-1]))dn=false;}if(up||dn)for(let j=i-5;j<=i;j++)if(!viol[j].includes('3: 6 จุดติดกันเป็นแนวโน้ม'))viol[j].push('3: 6 จุดติดกันเป็นแนวโน้ม');}
+ for(let i=2;i<N;i++){const w=[i-2,i-1,i];const hi=w.filter(j=>z[j]>2),lo=w.filter(j=>z[j]<-2);if(hi.length>=2)hi.forEach(j=>{if(!viol[j].includes('4: 2 ใน 3 จุดเกิน 2σ'))viol[j].push('4: 2 ใน 3 จุดเกิน 2σ');});if(lo.length>=2)lo.forEach(j=>{if(!viol[j].includes('4: 2 ใน 3 จุดเกิน 2σ'))viol[j].push('4: 2 ใน 3 จุดเกิน 2σ');});}
+ const typ=full.map((f,i)=>f?i:-1).filter(i=>i>=0);const ti=typ.length?typ[typ.length-1]:N-1;
+ return {CL,UCL,LCL,sig,z,viol,full,nFull,typUCL:UCL[ti],typLCL:LCL[ti],nViol:viol.filter(a=>a.length).length};
+}
+function spcChart(c,o){clear(c);const W=c.clientWidth||600,H=o.height||240,padL=50,padB=30,padT=20;
+ const st=spcStats(o);const N=o.v.length;const f=o.fmtVal||fmtN;
+ const labs=[{y:st.typUCL,t:'UCL '+f(st.typUCL)},{y:st.CL,t:'CL '+f(st.CL)},{y:st.typLCL,t:'LCL '+f(st.typLCL)}];
+ const padR=Math.max(o.padR||0,Math.max(...labs.map(l=>l.t.length))*6.4+14);
+ const s=el('svg',{viewBox:`0 0 ${W} ${H}`,width:'100%',height:H,role:'img','aria-label':o.aria||''},c);
+ const all=[...o.v,...st.UCL,...st.LCL,...(o.refs||[]).map(r=>r.y)];let lo=Math.min(...all),hi=Math.max(...all);const rg=Math.max(hi-lo,1e-6);
+ let ymin=lo-rg*.18,ymax=hi+rg*.18;if(lo>=0&&ymin<0)ymin=0;if(o.type==='p'&&ymax>(o.scale||1))ymax=(o.scale||1);
+ const y0=H-padB,sy=vv=>y0-(y0-padT)*(vv-ymin)/(ymax-ymin),x1=W-padR,sx=i=>padL+(x1-padL)*(N<2?0.5:i/(N-1)),half=N>1?(sx(1)-sx(0))/2:20;
+ const step=niceMax((ymax-ymin)/4);for(let t=Math.ceil(ymin/step)*step;t<=ymax+1e-9;t+=step){el('line',{x1:padL,x2:x1,y1:sy(t),y2:sy(t),stroke:'var(--grid)','stroke-width':1},s);txt(s,padL-6,sy(t)+4,o.fmtTick?o.fmtTick(t):fmtN(t),{'text-anchor':'end',fill:'var(--ink-3)','font-size':11});}
+ const stepPath=arr=>{let d=`M${sx(0)-half},${sy(arr[0])}H${sx(0)+half}`;for(let i=1;i<N;i++)d+=`V${sy(arr[i])}H${sx(i)+half}`;return d;};
+ /* band between LCL and UCL */
+ if(N>0){let d=stepPath(st.UCL);let back='';for(let i=N-1;i>=0;i--){back+=`L${sx(i)+half},${sy(st.LCL[i])}L${sx(i)-half},${sy(st.LCL[i])}`;}el('path',{d:d+back+'Z',fill:'var(--accent)',opacity:.07},s);
+  const two=st.sig.map((g,i)=>st.CL+2*g),mtwo=st.sig.map((g,i)=>Math.max(0,st.CL-2*g));
+  el('path',{d:stepPath(two),fill:'none',stroke:'var(--ink-3)','stroke-width':1,'stroke-dasharray':'2 4',opacity:.7},s);
+  el('path',{d:stepPath(mtwo),fill:'none',stroke:'var(--ink-3)','stroke-width':1,'stroke-dasharray':'2 4',opacity:.7},s);
+  el('path',{d:stepPath(st.UCL),fill:'none',stroke:'var(--crit)','stroke-width':1.5},s);
+  el('path',{d:stepPath(st.LCL),fill:'none',stroke:'var(--crit)','stroke-width':1.5},s);
+  el('line',{x1:sx(0)-half,x2:sx(N-1)+half,y1:sy(st.CL),y2:sy(st.CL),stroke:'var(--ink-1)','stroke-width':1.5},s);}
+ (o.refs||[]).forEach(r=>{el('line',{x1:padL,x2:x1,y1:sy(r.y),y2:sy(r.y),stroke:'var(--good)','stroke-width':1.5,'stroke-dasharray':'5 3'},s);txt(s,padL+4,sy(r.y)-5,r.label,{fill:'var(--good-text)','font-size':11,'font-weight':600});});
+ let lastY=-99;labs.forEach(l=>{let yy=Math.max(12,sy(l.y)+4);if(Math.abs(yy-lastY)<13)yy=lastY+13;lastY=yy;txt(s,x1+6,yy,l.t,{fill:l.t.startsWith('CL')?'var(--ink-1)':'var(--crit)','font-size':11,'font-weight':600});});
+ const tk=Math.max(1,Math.ceil(N/Math.max(2,Math.floor((x1-padL)/56))));o.x.forEach((lb,i)=>{if(i%tk===0)txt(s,sx(i),H-8,lb,{'text-anchor':'middle',fill:'var(--ink-3)','font-size':11});});
+ el('line',{x1:padL,x2:x1,y1:y0,y2:y0,stroke:'var(--axis)','stroke-width':1},s);
+ el('path',{d:'M'+o.v.map((vv,i)=>`${sx(i)},${sy(vv)}`).join('L'),fill:'none',stroke:'var(--accent)','stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'},s);
+ o.v.forEach((vv,i)=>{const bad=st.viol[i].length>0,part=!st.full[i];const g=el('g',{},s);
+  el('rect',{x:sx(i)-half,y:padT,width:half*2,height:y0-padT,fill:'transparent'},g);
+  el('circle',{cx:sx(i),cy:sy(vv),r:bad?5.5:4,fill:bad?'var(--crit)':part?'var(--surface)':'var(--accent)',stroke:bad?'var(--surface)':'var(--accent)','stroke-width':2},g);
+  let h=`<b>${o.x[i]}</b>${part?' <i>(ช่วงไม่เต็ม ไม่ใช้คำนวณขีดจำกัด)</i>':''}<br>ค่า ${f(vv)}${o.n?` · n=${fmtN(o.n[i])}`:''}${o.k?` · เหตุการณ์ ${fmtN(o.k[i])}`:''}<br>CL ${f(st.CL)} · UCL ${f(st.UCL[i])} · LCL ${f(st.LCL[i])} · z=${st.z[i].toFixed(2)}`;
+  if(bad)h+=`<br><b>ผิดกฎ:</b> ${st.viol[i].join(' · ')}`;else h+='<br>อยู่ในขีดจำกัด (common cause)';
+  hover(g,h);});
+ return st;
 }
 /* ---- click-to-enlarge ---- */
 const REG={};
@@ -466,7 +536,7 @@ const dates=new Array(N),dow=new Int8Array(N),mon=new Array(N),wk=new Array(N);
 const weekKeys=[];
 for(let i=0;i<N;i++){const dt=new Date(d0.getTime()+R.d[i]*86400000);dates[i]=dt;dow[i]=(dt.getDay()+6)%7;mon[i]=dt.toISOString().slice(0,7);const monday=new Date(dt.getTime()-dow[i]*86400000);wk[i]=monday.toISOString().slice(0,10);if(!weekKeys.includes(wk[i]))weekKeys.push(wk[i]);}
 weekKeys.sort();
-const F={month:'all',shift:'all',wd:'all',esi:'all',metric:'median',metric2:'vol',dist:'hist'};
+const F={month:'all',shift:'all',wd:'all',esi:'all',metric:'median',metric2:'vol',dist:'hist',period:'week'};
 function passes(i){if(F.month!=='all'&&mon[i]!==F.month)return false;if(F.shift!=='all'&&R.s[i]!==+F.shift)return false;if(F.wd==='wd'&&dow[i]>=5)return false;if(F.wd==='we'&&dow[i]<5)return false;if(F.esi!=='all'&&R.e[i]!==+F.esi)return false;return true;}
 const median=a=>{if(!a.length)return null;const b=[...a].sort((x,y)=>x-y);const m=b.length>>1;return b.length%2?b[m]:(b[m-1]+b[m])/2;};
 const quant=(a,p)=>{if(!a.length)return null;const b=[...a].sort((x,y)=>x-y);const k=(b.length-1)*p,f=Math.floor(k);return f+1<b.length?b[f]+(b[f+1]-b[f])*(k-f):b[f];};
@@ -517,12 +587,35 @@ function draw(){
  for(let dw=0;dw<7;dw++){const row=[],tr=[];[0,1,2].forEach(sh=>{const ii=idx.filter(i=>dow[i]===dw&&R.s[i]===sh);const s=st(ii);const i45=ii.filter(i=>R.e[i]>=4);const s45=st(i45);
   row.push(s.n?(m2==='vol'?s.n/daysPerDow[dw]:m2==='m45'?s45.median:s.ok):null);tr.push(`<b>${DOW[dw]} · ${SH[sh]}</b><br>${fmtN(s.n)} คน ใน ${daysPerDow[dw]} วัน (${(s.n/daysPerDow[dw]).toFixed(1)}/เวร)<br>มัธยฐาน ESI 4–5: ${fmtN(s45.median)} นาที · ทันเป้า ${fmtP1(s.ok)}`);});v2.push(row);t2.push(tr);}
  reg('hm-dw',(c,big)=>heatmap(c,{rows:DOW,labelW:big?110:80,cols:SH,values:v2,tips:t2,ramp:RAMP,invert:m2==='ok',rowH:big?52:30,fmt:v=>m2==='vol'?v.toFixed(1):m2==='ok'?fmtP(v):fmtN(v),aria:'heatmap วัน x เวร'}));
- /* 4-5 run charts */
- const wkS=weekKeys.map(k=>st(idx.filter(i=>wk[i]===k)));
- const xl=weekKeys.map(k=>{const d=new Date(k+'T00:00:00');return d.getDate()+' '+['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][d.getMonth()];});
- const p90s=wkS.map(s=>s.p90||0),oks=wkS.map(s=>(s.ok||0)*100);
- reg('run-p90',(c,big)=>lines(c,{height:big?440:210,padR:big?110:60,maxTicks:6,x:xl,series:[{name:'P90',color:'var(--accent)',values:p90s}],refs:[{y:median(p90s)||0,label:'centerline '+fmtN(median(p90s))}],fmtVal:v=>fmtN(v)+' นาที',extra:i=>`n=${fmtN(wkS[i].n)} · มัธยฐาน ${fmtN(wkS[i].median)} นาที`,aria:'run chart P90'}));
- reg('run-ok',(c,big)=>lines(c,{height:big?440:210,padR:big?110:60,min:0,max:100,maxTicks:6,x:xl,fmtTick:v=>v+'%',fmtVal:v=>v.toFixed(0)+'%',series:[{name:'ทันเป้า',color:'var(--accent)',area:true,values:oks}],refs:[{y:80,label:'เป้าหมาย 80%'},{y:median(oks)||0,label:'centerline '+(median(oks)||0).toFixed(0)+'%',color:'var(--ink-3)'}],extra:i=>`n=${fmtN(wkS[i].n)}`,aria:'run chart % ทันเป้า'}));
+ /* 4-7 SPC control charts */
+ const idxNoEsi=[];for(let i=0;i<N;i++){const keep=F.esi;F.esi='all';if(passes(i))idxNoEsi.push(i);F.esi=keep;}
+ const daysInWeek={};for(let i=0;i<N;i++){(daysInWeek[wk[i]]=daysInWeek[wk[i]]||new Set()).add(R.d[i]);}
+ const TH_M=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+ const dl=k=>{const d=new Date(k+'T00:00:00');return d.getDate()+' '+TH_M[d.getMonth()];};
+ const isDay=F.period==='day';
+ function periods(ii){const m=new Map();ii.forEach(i=>{const k=isDay?dates[i].toISOString().slice(0,10):wk[i];(m.get(k)||m.set(k,[]).get(k)).push(i);});const keys=[...m.keys()].sort();return {keys,groups:keys.map(k=>m.get(k)),labels:keys.map(dl),partial:keys.map(k=>isDay?false:(daysInWeek[k]||new Set()).size<7)};}
+ const unit=isDay?'วัน':'สัปดาห์';
+ function spcNote(id,stt,f,extra){const el=document.getElementById(id+'-note');if(!stt){el.textContent='ไม่มีข้อมูลตามตัวกรอง';return;}
+  let t=`เส้นกลาง ${f(stt.CL)} · UCL ${f(stt.typUCL)} · LCL ${f(stt.typLCL)} (คำนวณจาก ${stt.nFull} ${unit}เต็ม) · `;
+  t+=stt.nViol?`<b>พบจุดผิดกฎ ${stt.nViol} จุด</b> — วางเมาส์ที่จุดสีแดงเพื่อดูกฎที่ผิด ควรทบทวนเหตุการณ์ในช่วงนั้น`:`ทุกจุดอยู่ในขีดจำกัดและไม่ผิดกฎใด = กระบวนการ "นิ่ง" ที่ระดับนี้ (common cause) การจะเปลี่ยนค่าต้องเปลี่ยนที่ระบบ ไม่ใช่ตามแก้รายสัปดาห์`;
+  if(extra)t+=' · '+extra;el.innerHTML=t;}
+ const hgt=big=>big?440:230,mt=isDay?9:7;
+ /* 4 XmR P90 */
+ {const P=periods(idx);const v=[],x=[],pt=[],nn=[];P.groups.forEach((g,j)=>{if(g.length<5)return;v.push(quant(g.map(i=>R.w[i]),.9));x.push(P.labels[j]);pt.push(P.partial[j]);nn.push(g.length);});
+  if(v.length>=2){let stt;reg('spc-p90',(c,big)=>{stt=spcChart(c,{x,v,n:nn,type:'xmr',partial:pt,height:hgt(big),maxTicks:mt,fmtVal:a=>fmtN(a)+' นาที',aria:'XmR chart P90'});});spcNote('spc-p90',stt,a=>fmtN(a)+' นาที',`P90 = เวลาที่ผู้ป่วย 90% รอไม่เกิน`);}
+  else{document.getElementById('spc-p90').innerHTML='';spcNote('spc-p90',null);}}
+ /* 5 p-chart overall ok */
+ {const P=periods(idx);const v=[],x=[],pt=[],nn=[],kk=[];P.groups.forEach((g,j)=>{if(!g.length)return;const k=g.filter(i=>R.w[i]<=TGT[R.e[i]]).length;v.push(k/g.length*100);kk.push(k);nn.push(g.length);x.push(P.labels[j]);pt.push(P.partial[j]);});
+  if(v.length>=2){let stt;reg('spc-ok',(c,big)=>{stt=spcChart(c,{x,v,n:nn,k:kk,type:'p',scale:100,partial:pt,height:hgt(big),maxTicks:mt,fmtVal:a=>a.toFixed(1)+'%',fmtTick:a=>a.toFixed(0)+'%',refs:[{y:80,label:'เป้าหมาย 80%'}],aria:'p-chart % ทันเป้า'});});spcNote('spc-ok',stt,a=>a.toFixed(1)+'%',`ช่องว่างระหว่าง UCL กับเป้า 80% คือระยะที่ต้องปิดด้วยการเปลี่ยนระบบ`);}
+  else{document.getElementById('spc-ok').innerHTML='';spcNote('spc-ok',null);}}
+ /* 6 p-chart ESI4 */
+ {const P=periods(idxNoEsi.filter(i=>R.e[i]===4));const v=[],x=[],pt=[],nn=[],kk=[];P.groups.forEach((g,j)=>{if(g.length<5)return;const k=g.filter(i=>R.w[i]<=60).length;v.push(k/g.length*100);kk.push(k);nn.push(g.length);x.push(P.labels[j]);pt.push(P.partial[j]);});
+  if(v.length>=2){let stt;reg('spc-e4',(c,big)=>{stt=spcChart(c,{x,v,n:nn,k:kk,type:'p',scale:100,partial:pt,height:hgt(big),maxTicks:mt,fmtVal:a=>a.toFixed(1)+'%',fmtTick:a=>a.toFixed(0)+'%',refs:[{y:80,label:'เป้าหมาย 80%'}],aria:'p-chart ESI 4'});});spcNote('spc-e4',stt,a=>a.toFixed(1)+'%',`หลังเปิด Fast-track คาดว่าจุดจะทะลุ UCL ขึ้นไปและคงอยู่ ≥8 จุด = หลักฐานว่ามาตรการได้ผล`);}
+  else{document.getElementById('spc-e4').innerHTML='';spcNote('spc-e4',null);}}
+ /* 7 u-chart ESI3 >120 per 100 */
+ {const P=periods(idxNoEsi.filter(i=>R.e[i]===3));const v=[],x=[],pt=[],nn=[],kk=[];P.groups.forEach((g,j)=>{if(g.length<5)return;const k=g.filter(i=>R.w[i]>120).length;v.push(k/g.length*100);kk.push(k);nn.push(g.length);x.push(P.labels[j]);pt.push(P.partial[j]);});
+  if(v.length>=2){let stt;reg('spc-e3',(c,big)=>{stt=spcChart(c,{x,v,n:nn,k:kk,type:'u',scale:100,partial:pt,height:hgt(big),maxTicks:mt,fmtVal:a=>a.toFixed(1)+' ต่อ 100',fmtTick:a=>a.toFixed(0),refs:[{y:0,label:'เป้าหมาย 0'}],aria:'u-chart ESI 3'});});spcNote('spc-e3',stt,a=>a.toFixed(1)+' ต่อ 100 คน',`อัตราคงที่ราว 1 ใน 10 ทุก${unit} = ช่องโหว่ของกระบวนการ ไม่ใช่เหตุการณ์เฉพาะวัน`);}
+  else{document.getElementById('spc-e3').innerHTML='';spcNote('spc-e3',null);}}
  /* 6 pareto */
  const segs=[];esiRows.forEach(e=>[0,1,2].forEach(sh=>{const s=st(idx.filter(i=>R.e[i]===e&&R.s[i]===sh));if(s.over>0)segs.push({label:`ESI ${e} ${SH[sh].replace('เวร','')}`,over:s.over,n:s.n,e,sh});}));
  segs.sort((a,b)=>b.over-a.over);const tot=segs.reduce((a,b)=>a+b.over,0);let cum=0;const top=segs.slice(0,8);

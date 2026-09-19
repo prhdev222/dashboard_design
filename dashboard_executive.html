@@ -238,7 +238,7 @@ function lines(c,o){clear(c);const W=c.clientWidth||600,H=o.height||220,padL=44,
  const y0=H-padB,sy=v=>y0-(y0-padT)*(v-min)/(max-min),n=o.x.length,sx=i=>padL+(W-padL-padR)*(n<2?0.5:i/(n-1));
  ticks(max-min,4).forEach(t=>{const v=t+min;el('line',{x1:padL,x2:W-padR,y1:sy(v),y2:sy(v),stroke:'var(--grid)','stroke-width':1},s);txt(s,padL-6,sy(v)+4,o.fmtTick?o.fmtTick(v):fmtN(v),{'text-anchor':'end',fill:'var(--ink-3)','font-size':11});});
  (o.refs||[]).forEach(r=>{el('line',{x1:padL,x2:W-padR,y1:sy(r.y),y2:sy(r.y),stroke:r.color||'var(--ink-1)','stroke-width':1.5,'stroke-dasharray':'4 3'},s);txt(s,W-padR-4,sy(r.y)-5,r.label,{'text-anchor':'end',fill:'var(--ink-1)','font-size':11,'font-weight':600});});
- const step=Math.ceil(n/(o.maxTicks||7));o.x.forEach((lb,i)=>{if(i%step===0)txt(s,sx(i),H-8,lb,{'text-anchor':'middle',fill:'var(--ink-3)','font-size':11});});
+ const step=Math.max(1,Math.ceil(n/Math.max(2,Math.floor((W-padL-padR)/56))));o.x.forEach((lb,i)=>{if(i%step===0)txt(s,sx(i),H-8,lb,{'text-anchor':'middle',fill:'var(--ink-3)','font-size':11});});
  o.series.forEach(sr=>{if(sr.area){const d='M'+sr.values.map((v,i)=>`${sx(i)},${sy(v)}`).join('L')+`L${sx(n-1)},${y0}L${sx(0)},${y0}Z`;el('path',{d,fill:sr.color,opacity:.1},s);}
   const d='M'+sr.values.map((v,i)=>`${sx(i)},${sy(v)}`).join('L');el('path',{d,fill:'none',stroke:sr.color,'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'},s);
   const last=sr.values[n-1];el('circle',{cx:sx(n-1),cy:sy(last),r:4.5,fill:sr.color,stroke:'var(--surface)','stroke-width':2},s);
@@ -305,6 +305,54 @@ function boxplot(c,o){clear(c);const W=c.clientWidth||600,rowH=o.rowH||46,labelW
   hover(g,r.tip||`<b>${r.label}</b><br>มัธยฐาน ${fmtN(st.med)} นาที`);
  });
  el('line',{x1:x0,x2:x0,y1:4,y2:H-24,stroke:'var(--axis)','stroke-width':1},s);
+}
+/* SPC control chart. o={x,v,n?,k?,type:'xmr'|'p'|'u',partial?,scale?,fmtVal,fmtTick,refs?,height,padR,aria}
+   p/u limits are stepped by subgroup size; limits are computed from non-partial points only. Returns stats. */
+function spcStats(o){const N=o.v.length,full=o.partial?o.partial.map(p=>!p):o.v.map(()=>true);const sc=o.scale||1;
+ let CL,sig=new Array(N).fill(0),nFull=0;
+ if(o.type==='xmr'){const xs=o.v.filter((_,i)=>full[i]);nFull=xs.length;CL=xs.reduce((a,b)=>a+b,0)/Math.max(1,xs.length);const mrs=[];for(let i=1;i<xs.length;i++)mrs.push(Math.abs(xs[i]-xs[i-1]));const MR=mrs.length?mrs.reduce((a,b)=>a+b,0)/mrs.length:0;const s=2.66*MR/3;sig.fill(s);}
+ else{let K=0,Nn=0;for(let i=0;i<N;i++)if(full[i]){K+=o.k[i];Nn+=o.n[i];nFull++;}const pu=Nn?K/Nn:0;CL=pu*sc;
+  for(let i=0;i<N;i++){const s=o.type==='p'?Math.sqrt(Math.max(0,pu*(1-pu))/Math.max(1,o.n[i])):Math.sqrt(pu/Math.max(1,o.n[i]));sig[i]=s*sc;}}
+ const UCL=sig.map(s=>o.type==='p'?Math.min(sc,CL+3*s):CL+3*s),LCL=sig.map(s=>Math.max(0,CL-3*s));
+ const z=o.v.map((x,i)=>sig[i]>0?(x-CL)/sig[i]:0);
+ const viol=o.v.map(()=>[]);
+ for(let i=0;i<N;i++){if(Math.abs(z[i])>3)viol[i].push('1: นอกขีดจำกัด 3σ');}
+ for(let i=7;i<N;i++){const w=z.slice(i-7,i+1);if(w.every(a=>a>0)||w.every(a=>a<0))for(let j=i-7;j<=i;j++)if(!viol[j].includes('2: 8 จุดติดกันด้านเดียว'))viol[j].push('2: 8 จุดติดกันด้านเดียว');}
+ for(let i=5;i<N;i++){let up=true,dn=true;for(let j=i-4;j<=i;j++){if(!(o.v[j]>o.v[j-1]))up=false;if(!(o.v[j]<o.v[j-1]))dn=false;}if(up||dn)for(let j=i-5;j<=i;j++)if(!viol[j].includes('3: 6 จุดติดกันเป็นแนวโน้ม'))viol[j].push('3: 6 จุดติดกันเป็นแนวโน้ม');}
+ for(let i=2;i<N;i++){const w=[i-2,i-1,i];const hi=w.filter(j=>z[j]>2),lo=w.filter(j=>z[j]<-2);if(hi.length>=2)hi.forEach(j=>{if(!viol[j].includes('4: 2 ใน 3 จุดเกิน 2σ'))viol[j].push('4: 2 ใน 3 จุดเกิน 2σ');});if(lo.length>=2)lo.forEach(j=>{if(!viol[j].includes('4: 2 ใน 3 จุดเกิน 2σ'))viol[j].push('4: 2 ใน 3 จุดเกิน 2σ');});}
+ const typ=full.map((f,i)=>f?i:-1).filter(i=>i>=0);const ti=typ.length?typ[typ.length-1]:N-1;
+ return {CL,UCL,LCL,sig,z,viol,full,nFull,typUCL:UCL[ti],typLCL:LCL[ti],nViol:viol.filter(a=>a.length).length};
+}
+function spcChart(c,o){clear(c);const W=c.clientWidth||600,H=o.height||240,padL=50,padB=30,padT=20;
+ const st=spcStats(o);const N=o.v.length;const f=o.fmtVal||fmtN;
+ const labs=[{y:st.typUCL,t:'UCL '+f(st.typUCL)},{y:st.CL,t:'CL '+f(st.CL)},{y:st.typLCL,t:'LCL '+f(st.typLCL)}];
+ const padR=Math.max(o.padR||0,Math.max(...labs.map(l=>l.t.length))*6.4+14);
+ const s=el('svg',{viewBox:`0 0 ${W} ${H}`,width:'100%',height:H,role:'img','aria-label':o.aria||''},c);
+ const all=[...o.v,...st.UCL,...st.LCL,...(o.refs||[]).map(r=>r.y)];let lo=Math.min(...all),hi=Math.max(...all);const rg=Math.max(hi-lo,1e-6);
+ let ymin=lo-rg*.18,ymax=hi+rg*.18;if(lo>=0&&ymin<0)ymin=0;if(o.type==='p'&&ymax>(o.scale||1))ymax=(o.scale||1);
+ const y0=H-padB,sy=vv=>y0-(y0-padT)*(vv-ymin)/(ymax-ymin),x1=W-padR,sx=i=>padL+(x1-padL)*(N<2?0.5:i/(N-1)),half=N>1?(sx(1)-sx(0))/2:20;
+ const step=niceMax((ymax-ymin)/4);for(let t=Math.ceil(ymin/step)*step;t<=ymax+1e-9;t+=step){el('line',{x1:padL,x2:x1,y1:sy(t),y2:sy(t),stroke:'var(--grid)','stroke-width':1},s);txt(s,padL-6,sy(t)+4,o.fmtTick?o.fmtTick(t):fmtN(t),{'text-anchor':'end',fill:'var(--ink-3)','font-size':11});}
+ const stepPath=arr=>{let d=`M${sx(0)-half},${sy(arr[0])}H${sx(0)+half}`;for(let i=1;i<N;i++)d+=`V${sy(arr[i])}H${sx(i)+half}`;return d;};
+ /* band between LCL and UCL */
+ if(N>0){let d=stepPath(st.UCL);let back='';for(let i=N-1;i>=0;i--){back+=`L${sx(i)+half},${sy(st.LCL[i])}L${sx(i)-half},${sy(st.LCL[i])}`;}el('path',{d:d+back+'Z',fill:'var(--accent)',opacity:.07},s);
+  const two=st.sig.map((g,i)=>st.CL+2*g),mtwo=st.sig.map((g,i)=>Math.max(0,st.CL-2*g));
+  el('path',{d:stepPath(two),fill:'none',stroke:'var(--ink-3)','stroke-width':1,'stroke-dasharray':'2 4',opacity:.7},s);
+  el('path',{d:stepPath(mtwo),fill:'none',stroke:'var(--ink-3)','stroke-width':1,'stroke-dasharray':'2 4',opacity:.7},s);
+  el('path',{d:stepPath(st.UCL),fill:'none',stroke:'var(--crit)','stroke-width':1.5},s);
+  el('path',{d:stepPath(st.LCL),fill:'none',stroke:'var(--crit)','stroke-width':1.5},s);
+  el('line',{x1:sx(0)-half,x2:sx(N-1)+half,y1:sy(st.CL),y2:sy(st.CL),stroke:'var(--ink-1)','stroke-width':1.5},s);}
+ (o.refs||[]).forEach(r=>{el('line',{x1:padL,x2:x1,y1:sy(r.y),y2:sy(r.y),stroke:'var(--good)','stroke-width':1.5,'stroke-dasharray':'5 3'},s);txt(s,padL+4,sy(r.y)-5,r.label,{fill:'var(--good-text)','font-size':11,'font-weight':600});});
+ let lastY=-99;labs.forEach(l=>{let yy=Math.max(12,sy(l.y)+4);if(Math.abs(yy-lastY)<13)yy=lastY+13;lastY=yy;txt(s,x1+6,yy,l.t,{fill:l.t.startsWith('CL')?'var(--ink-1)':'var(--crit)','font-size':11,'font-weight':600});});
+ const tk=Math.max(1,Math.ceil(N/Math.max(2,Math.floor((x1-padL)/56))));o.x.forEach((lb,i)=>{if(i%tk===0)txt(s,sx(i),H-8,lb,{'text-anchor':'middle',fill:'var(--ink-3)','font-size':11});});
+ el('line',{x1:padL,x2:x1,y1:y0,y2:y0,stroke:'var(--axis)','stroke-width':1},s);
+ el('path',{d:'M'+o.v.map((vv,i)=>`${sx(i)},${sy(vv)}`).join('L'),fill:'none',stroke:'var(--accent)','stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'},s);
+ o.v.forEach((vv,i)=>{const bad=st.viol[i].length>0,part=!st.full[i];const g=el('g',{},s);
+  el('rect',{x:sx(i)-half,y:padT,width:half*2,height:y0-padT,fill:'transparent'},g);
+  el('circle',{cx:sx(i),cy:sy(vv),r:bad?5.5:4,fill:bad?'var(--crit)':part?'var(--surface)':'var(--accent)',stroke:bad?'var(--surface)':'var(--accent)','stroke-width':2},g);
+  let h=`<b>${o.x[i]}</b>${part?' <i>(ช่วงไม่เต็ม ไม่ใช้คำนวณขีดจำกัด)</i>':''}<br>ค่า ${f(vv)}${o.n?` · n=${fmtN(o.n[i])}`:''}${o.k?` · เหตุการณ์ ${fmtN(o.k[i])}`:''}<br>CL ${f(st.CL)} · UCL ${f(st.UCL[i])} · LCL ${f(st.LCL[i])} · z=${st.z[i].toFixed(2)}`;
+  if(bad)h+=`<br><b>ผิดกฎ:</b> ${st.viol[i].join(' · ')}`;else h+='<br>อยู่ในขีดจำกัด (common cause)';
+  hover(g,h);});
+ return st;
 }
 /* ---- click-to-enlarge ---- */
 const REG={};
