@@ -384,9 +384,12 @@ async function saveChart(id,fromLB,btn){
  const old=btn?btn.innerHTML:'';if(btn){btn.disabled=true;btn.innerHTML=ICON_DL+'กำลังสร้างรูป…';}
  try{const {canvas,title}=await renderChartPNG(id,fromLB);
   const fname=(title||id).replace(/[\\/:*?"<>|#%]+/g,'').replace(/\s+/g,'_').slice(0,70)+'.png';
-  await new Promise(res=>canvas.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=fname;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();res();},800);},'image/png'));
+  const blob=await new Promise(res=>canvas.toBlob(res,'image/png'));
+  let dl=null;try{if(window.claude&&typeof window.claude.use==='function')dl=await window.claude.use('downloads');}catch(e){dl=null;}
+  if(dl){await dl.save({filename:fname,data:blob});}
+  else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;document.body.appendChild(a);a.click();await new Promise(res=>setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();res();},800));}
   if(btn){btn.innerHTML=ICON_DL+'บันทึกแล้ว';setTimeout(()=>{btn.innerHTML=old;btn.disabled=false;},1400);}
- }catch(err){console.error(err);if(btn){btn.innerHTML=ICON_DL+'บันทึกไม่สำเร็จ';setTimeout(()=>{btn.innerHTML=old;btn.disabled=false;},2000);}}
+ }catch(err){const declined=err&&err.code==='declined';if(!declined)console.error(err);if(btn){btn.innerHTML=ICON_DL+(declined?'ยกเลิกแล้ว':'บันทึกไม่สำเร็จ');setTimeout(()=>{btn.innerHTML=old;btn.disabled=false;},2000);}}
 }
 
 const TGT={1:1,2:10,3:30,4:60,5:120};
