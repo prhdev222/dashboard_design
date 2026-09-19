@@ -177,7 +177,7 @@ header.top.headrow .headtext{display:grid;gap:6px;flex:1 1 520px;min-width:0}
 
 <div class="card wide">
  <div class="fg" style="justify-content:space-between;align-items:flex-start">
-  <h2 style="margin:0">1. การกระจายเวลารอแยกตาม ESI <span class="badge" id="dist-badge">BOX PLOT · Q1–Q3, มัธยฐาน, หนวด 1.5 IQR</span></h2>
+  <h2 style="margin:0">1. การกระจายเวลารอแยกตาม ESI <span class="badge" id="dist-badge">BOX PLOT · Q1–Q3, มัธยฐาน, หนวด P5–P95</span></h2>
   <div class="fg"><span class="fl">มุมมอง</span><div class="seg metric" data-key="dist"><button data-v="box" aria-pressed="true">Box plot</button><button data-v="hist">ฮิสโตแกรม</button></div></div>
  </div>
  <p class="why" id="dist-why">ค่าเฉลี่ยซ่อนรูปร่างของปัญหา — ฮิสโตแกรมแสดงว่าผู้ป่วยแต่ละระดับ "รอแบบไหน": กระจุกตัวใกล้เป้า หรือมีกลุ่มหนึ่งที่หลุดไปรอนานผิดปกติ (เส้นดำ = เวลาเป้าหมาย)</p>
@@ -359,82 +359,39 @@ function heatmap(c,o){clear(c);const W=c.clientWidth||500,rowH=o.rowH||40,labelW
    hover(g,(o.tips&&o.tips[i]&&o.tips[i][j])||`<b>${r} · ${cl}</b><br>${o.fmt(v)}`);});});
 }
 
-/* horizontal box plot: rows [{label, s:{min,q1,med,q3,max,lo,hi,out:[],n}, color, target, tip}] */
-function boxplot(c,o){clear(c);const W=c.clientWidth||600,rowH=o.rowH||46,labelW=o.labelW||110,padR=o.padR||200,H=rowH*o.rows.length+30;
+/* percentile box plot: rows [{label, s:{q1,med,q3,p5,p95,max,n,tail:{thr,count,share,to}}, color, target, tip}], o.cap = axis cap (minutes) */
+function boxplot(c,o){clear(c);const W=c.clientWidth||600,rowH=o.rowH||52,labelW=o.labelW||70,padR=o.padR||230,H=rowH*o.rows.length+30;
  const s=el('svg',{viewBox:`0 0 ${W} ${H}`,width:'100%',height:H,role:'img','aria-label':o.aria||''},c);
- const x0=labelW,x1=W-padR,max=o.max||niceMax(Math.max(...o.rows.map(r=>Math.max(r.s.max||0,r.target||0)))*1.04);
- const sx=v=>x0+(x1-x0)*v/max;
- const tk=ticks(max,6);tk.forEach((t,i)=>{el('line',{x1:sx(t),x2:sx(t),y1:4,y2:H-24,stroke:'var(--grid)','stroke-width':1},s);txt(s,sx(t),H-8,fmtN(t)+(i===tk.length-1?' นาที':''),{'text-anchor':i===tk.length-1?'end':'middle',fill:'var(--ink-3)','font-size':11});});
- o.rows.forEach((r,i)=>{const yc=rowH*i+rowH/2,bh=Math.min(20,rowH*0.5),st=r.s;
+ const cap=o.cap||250,x0=labelW,x1=W-padR;const sx=v=>x0+(x1-x0)*Math.min(v,cap)/cap;
+ const tk=ticks(cap,5);tk.forEach((t,i)=>{el('line',{x1:sx(t),x2:sx(t),y1:4,y2:H-24,stroke:'var(--grid)','stroke-width':1},s);txt(s,sx(t),H-8,fmtN(t)+(i===tk.length-1?' นาที':''),{'text-anchor':i===tk.length-1?'end':'middle',fill:'var(--ink-3)','font-size':11});});
+ o.rows.forEach((r,i)=>{const yc=rowH*i+rowH/2,bh=Math.min(22,rowH*0.42),st=r.s;
   txt(s,x0-8,yc+4,r.label,{'text-anchor':'end',fill:'var(--ink-1)','font-weight':600,'font-size':13});
   const g=el('g',{},s);
   el('rect',{x:x0,y:yc-rowH/2+2,width:x1-x0,height:rowH-4,fill:'transparent'},g);
-  /* outliers: deterministic vertical jitter */
-  (st.out||[]).forEach((v,k)=>{const h=(Math.imul(k+1,2654435761)>>>0)/4294967296;const j=(h-0.5)*bh*0.9;el('circle',{cx:sx(v),cy:yc+j,r:2.2,fill:r.color,opacity:.35},g);});
-  /* whiskers */
-  el('line',{x1:sx(st.lo),x2:sx(st.q1),y1:yc,y2:yc,stroke:r.color,'stroke-width':2},g);
-  el('line',{x1:sx(st.q3),x2:sx(st.hi),y1:yc,y2:yc,stroke:r.color,'stroke-width':2},g);
-  el('line',{x1:sx(st.lo),x2:sx(st.lo),y1:yc-bh/3,y2:yc+bh/3,stroke:r.color,'stroke-width':2},g);
-  el('line',{x1:sx(st.hi),x2:sx(st.hi),y1:yc-bh/3,y2:yc+bh/3,stroke:r.color,'stroke-width':2},g);
-  /* box */
+  /* tail band: patients beyond a clinically meaningful threshold */
+  if(st.tail&&st.tail.count>0){const a=sx(st.tail.thr),b=sx(Math.min(st.tail.to,cap));
+   el('rect',{x:a,y:yc-bh/2,width:Math.max(3,b-a),height:bh,rx:3,fill:r.color,opacity:.18},g);
+   el('line',{x1:a,x2:a,y1:yc-bh/2,y2:yc+bh/2,stroke:r.color,'stroke-width':1.5,opacity:.8},g);
+   const tl=`${fmtN(st.tail.count)} คน (${fmtP1(st.tail.share)}) รอเกิน ${fmtN(st.tail.thr)} นาที`;
+   const tx=Math.min(a+4,x1-tl.length*6.2);txt(s,tx,yc-bh/2-5,tl,{fill:'var(--ink-1)','font-size':11,'font-weight':600});}
+  /* whiskers P5–P95 */
+  el('line',{x1:sx(st.p5),x2:sx(st.q1),y1:yc,y2:yc,stroke:r.color,'stroke-width':2},g);
+  el('line',{x1:sx(st.q3),x2:sx(st.p95),y1:yc,y2:yc,stroke:r.color,'stroke-width':2},g);
+  el('line',{x1:sx(st.p5),x2:sx(st.p5),y1:yc-bh/3,y2:yc+bh/3,stroke:r.color,'stroke-width':2},g);
+  if(st.p95<=cap)el('line',{x1:sx(st.p95),x2:sx(st.p95),y1:yc-bh/3,y2:yc+bh/3,stroke:r.color,'stroke-width':2},g);
+  else el('path',{d:`M${x1-6},${yc-5}L${x1},${yc}L${x1-6},${yc+5}`,fill:'none',stroke:r.color,'stroke-width':2},g);
+  /* box + median */
   const bw=Math.max(2,sx(st.q3)-sx(st.q1));
   el('rect',{x:sx(st.q1),y:yc-bh/2,width:bw,height:bh,rx:3,fill:r.color,stroke:'var(--surface)','stroke-width':1},g);
   el('line',{x1:sx(st.med),x2:sx(st.med),y1:yc-bh/2-3,y2:yc+bh/2+3,stroke:'var(--surface)','stroke-width':4},g);
   el('line',{x1:sx(st.med),x2:sx(st.med),y1:yc-bh/2-3,y2:yc+bh/2+3,stroke:'var(--ink-1)','stroke-width':2},g);
   if(r.target!=null){el('line',{x1:sx(r.target),x2:sx(r.target),y1:yc-rowH/2+4,y2:yc+rowH/2-4,stroke:'var(--ink-1)','stroke-width':1.5,'stroke-dasharray':'3 3'},g);}
-  txt(s,x1+10,yc-3,`มัธยฐาน ${fmtN(st.med)} · IQR ${fmtN(st.q1)}–${fmtN(st.q3)}`,{fill:'var(--ink-1)','font-size':11.5,'font-weight':600});
-  txt(s,x1+10,yc+11,`หนวด ${fmtN(st.lo)}–${fmtN(st.hi)} · outlier ${fmtN((st.out||[]).length)} คน`,{fill:'var(--ink-3)','font-size':11});
+  /* right-hand summary */
+  txt(s,x1+12,yc-3,`มัธยฐาน ${fmtN(st.med)} · ครึ่งกลาง ${fmtN(st.q1)}–${fmtN(st.q3)} นาที`,{fill:'var(--ink-1)','font-size':11.5,'font-weight':600});
+  txt(s,x1+12,yc+11,`90% ของผู้ป่วยรอ ${fmtN(st.p5)}–${fmtN(st.p95)} นาที · n=${fmtN(st.n)}${st.beyond>0?` · ▸ เกิน ${fmtN(cap)} นาที ${fmtN(st.beyond)} คน`:''}`,{fill:'var(--ink-3)','font-size':11});
   hover(g,r.tip||`<b>${r.label}</b><br>มัธยฐาน ${fmtN(st.med)} นาที`);
  });
  el('line',{x1:x0,x2:x0,y1:4,y2:H-24,stroke:'var(--axis)','stroke-width':1},s);
-}
-/* SPC control chart. o={x,v,n?,k?,type:'xmr'|'p'|'u',partial?,scale?,fmtVal,fmtTick,refs?,height,padR,aria}
-   p/u limits are stepped by subgroup size; limits are computed from non-partial points only. Returns stats. */
-function spcStats(o){const N=o.v.length,full=o.partial?o.partial.map(p=>!p):o.v.map(()=>true);const sc=o.scale||1;
- let CL,sig=new Array(N).fill(0),nFull=0;
- if(o.type==='xmr'){const xs=o.v.filter((_,i)=>full[i]);nFull=xs.length;CL=xs.reduce((a,b)=>a+b,0)/Math.max(1,xs.length);const mrs=[];for(let i=1;i<xs.length;i++)mrs.push(Math.abs(xs[i]-xs[i-1]));const MR=mrs.length?mrs.reduce((a,b)=>a+b,0)/mrs.length:0;const s=2.66*MR/3;sig.fill(s);}
- else{let K=0,Nn=0;for(let i=0;i<N;i++)if(full[i]){K+=o.k[i];Nn+=o.n[i];nFull++;}const pu=Nn?K/Nn:0;CL=pu*sc;
-  for(let i=0;i<N;i++){const s=o.type==='p'?Math.sqrt(Math.max(0,pu*(1-pu))/Math.max(1,o.n[i])):Math.sqrt(pu/Math.max(1,o.n[i]));sig[i]=s*sc;}}
- const UCL=sig.map(s=>o.type==='p'?Math.min(sc,CL+3*s):CL+3*s),LCL=sig.map(s=>Math.max(0,CL-3*s));
- const z=o.v.map((x,i)=>sig[i]>0?(x-CL)/sig[i]:0);
- const viol=o.v.map(()=>[]);
- for(let i=0;i<N;i++){if(Math.abs(z[i])>3)viol[i].push('1: นอกขีดจำกัด 3σ');}
- for(let i=7;i<N;i++){const w=z.slice(i-7,i+1);if(w.every(a=>a>0)||w.every(a=>a<0))for(let j=i-7;j<=i;j++)if(!viol[j].includes('2: 8 จุดติดกันด้านเดียว'))viol[j].push('2: 8 จุดติดกันด้านเดียว');}
- for(let i=5;i<N;i++){let up=true,dn=true;for(let j=i-4;j<=i;j++){if(!(o.v[j]>o.v[j-1]))up=false;if(!(o.v[j]<o.v[j-1]))dn=false;}if(up||dn)for(let j=i-5;j<=i;j++)if(!viol[j].includes('3: 6 จุดติดกันเป็นแนวโน้ม'))viol[j].push('3: 6 จุดติดกันเป็นแนวโน้ม');}
- for(let i=2;i<N;i++){const w=[i-2,i-1,i];const hi=w.filter(j=>z[j]>2),lo=w.filter(j=>z[j]<-2);if(hi.length>=2)hi.forEach(j=>{if(!viol[j].includes('4: 2 ใน 3 จุดเกิน 2σ'))viol[j].push('4: 2 ใน 3 จุดเกิน 2σ');});if(lo.length>=2)lo.forEach(j=>{if(!viol[j].includes('4: 2 ใน 3 จุดเกิน 2σ'))viol[j].push('4: 2 ใน 3 จุดเกิน 2σ');});}
- const typ=full.map((f,i)=>f?i:-1).filter(i=>i>=0);const ti=typ.length?typ[typ.length-1]:N-1;
- return {CL,UCL,LCL,sig,z,viol,full,nFull,typUCL:UCL[ti],typLCL:LCL[ti],nViol:viol.filter(a=>a.length).length};
-}
-function spcChart(c,o){clear(c);const W=c.clientWidth||600,H=o.height||240,padL=50,padB=30,padT=20;
- const st=spcStats(o);const N=o.v.length;const f=o.fmtVal||fmtN;
- const labs=[{y:st.typUCL,t:'UCL '+f(st.typUCL)},{y:st.CL,t:'CL '+f(st.CL)},{y:st.typLCL,t:'LCL '+f(st.typLCL)}];
- const padR=Math.max(o.padR||0,Math.max(...labs.map(l=>l.t.length))*6.4+14);
- const s=el('svg',{viewBox:`0 0 ${W} ${H}`,width:'100%',height:H,role:'img','aria-label':o.aria||''},c);
- const all=[...o.v,...st.UCL,...st.LCL,...(o.refs||[]).map(r=>r.y)];let lo=Math.min(...all),hi=Math.max(...all);const rg=Math.max(hi-lo,1e-6);
- let ymin=lo-rg*.18,ymax=hi+rg*.18;if(lo>=0&&ymin<0)ymin=0;if(o.type==='p'&&ymax>(o.scale||1))ymax=(o.scale||1);
- const y0=H-padB,sy=vv=>y0-(y0-padT)*(vv-ymin)/(ymax-ymin),x1=W-padR,sx=i=>padL+(x1-padL)*(N<2?0.5:i/(N-1)),half=N>1?(sx(1)-sx(0))/2:20;
- const step=niceMax((ymax-ymin)/4);for(let t=Math.ceil(ymin/step)*step;t<=ymax+1e-9;t+=step){el('line',{x1:padL,x2:x1,y1:sy(t),y2:sy(t),stroke:'var(--grid)','stroke-width':1},s);txt(s,padL-6,sy(t)+4,o.fmtTick?o.fmtTick(t):fmtN(t),{'text-anchor':'end',fill:'var(--ink-3)','font-size':11});}
- const stepPath=arr=>{let d=`M${sx(0)-half},${sy(arr[0])}H${sx(0)+half}`;for(let i=1;i<N;i++)d+=`V${sy(arr[i])}H${sx(i)+half}`;return d;};
- /* band between LCL and UCL */
- if(N>0){let d=stepPath(st.UCL);let back='';for(let i=N-1;i>=0;i--){back+=`L${sx(i)+half},${sy(st.LCL[i])}L${sx(i)-half},${sy(st.LCL[i])}`;}el('path',{d:d+back+'Z',fill:'var(--accent)',opacity:.07},s);
-  const two=st.sig.map((g,i)=>st.CL+2*g),mtwo=st.sig.map((g,i)=>Math.max(0,st.CL-2*g));
-  el('path',{d:stepPath(two),fill:'none',stroke:'var(--ink-3)','stroke-width':1,'stroke-dasharray':'2 4',opacity:.7},s);
-  el('path',{d:stepPath(mtwo),fill:'none',stroke:'var(--ink-3)','stroke-width':1,'stroke-dasharray':'2 4',opacity:.7},s);
-  el('path',{d:stepPath(st.UCL),fill:'none',stroke:'var(--crit)','stroke-width':1.5},s);
-  el('path',{d:stepPath(st.LCL),fill:'none',stroke:'var(--crit)','stroke-width':1.5},s);
-  el('line',{x1:sx(0)-half,x2:sx(N-1)+half,y1:sy(st.CL),y2:sy(st.CL),stroke:'var(--ink-1)','stroke-width':1.5},s);}
- (o.refs||[]).forEach(r=>{el('line',{x1:padL,x2:x1,y1:sy(r.y),y2:sy(r.y),stroke:'var(--good)','stroke-width':1.5,'stroke-dasharray':'5 3'},s);txt(s,padL+4,sy(r.y)-5,r.label,{fill:'var(--good-text)','font-size':11,'font-weight':600});});
- let lastY=-99;labs.forEach(l=>{let yy=Math.max(12,sy(l.y)+4);if(Math.abs(yy-lastY)<13)yy=lastY+13;lastY=yy;txt(s,x1+6,yy,l.t,{fill:l.t.startsWith('CL')?'var(--ink-1)':'var(--crit)','font-size':11,'font-weight':600});});
- const tk=Math.max(1,Math.ceil(N/Math.max(2,Math.floor((x1-padL)/56))));o.x.forEach((lb,i)=>{if(i%tk===0)txt(s,sx(i),H-8,lb,{'text-anchor':'middle',fill:'var(--ink-3)','font-size':11});});
- el('line',{x1:padL,x2:x1,y1:y0,y2:y0,stroke:'var(--axis)','stroke-width':1},s);
- el('path',{d:'M'+o.v.map((vv,i)=>`${sx(i)},${sy(vv)}`).join('L'),fill:'none',stroke:'var(--accent)','stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'},s);
- o.v.forEach((vv,i)=>{const bad=st.viol[i].length>0,part=!st.full[i];const g=el('g',{},s);
-  el('rect',{x:sx(i)-half,y:padT,width:half*2,height:y0-padT,fill:'transparent'},g);
-  el('circle',{cx:sx(i),cy:sy(vv),r:bad?5.5:4,fill:bad?'var(--crit)':part?'var(--surface)':'var(--accent)',stroke:bad?'var(--surface)':'var(--accent)','stroke-width':2},g);
-  let h=`<b>${o.x[i]}</b>${part?' <i>(ช่วงไม่เต็ม ไม่ใช้คำนวณขีดจำกัด)</i>':''}<br>ค่า ${f(vv)}${o.n?` · n=${fmtN(o.n[i])}`:''}${o.k?` · เหตุการณ์ ${fmtN(o.k[i])}`:''}<br>CL ${f(st.CL)} · UCL ${f(st.UCL[i])} · LCL ${f(st.LCL[i])} · z=${st.z[i].toFixed(2)}`;
-  if(bad)h+=`<br><b>ผิดกฎ:</b> ${st.viol[i].join(' · ')}`;else h+='<br>อยู่ในขีดจำกัด (common cause)';
-  hover(g,h);});
- return st;
 }
 /* ---- click-to-enlarge ---- */
 const REG={};
@@ -539,20 +496,21 @@ function draw(){
  }
  const isBox=F.dist==='box';
  document.getElementById('hists').hidden=isBox;document.getElementById('boxwrap').hidden=!isBox;
- document.getElementById('dist-badge').textContent=isBox?'BOX PLOT · Q1–Q3, มัธยฐาน, หนวด 1.5 IQR':'HISTOGRAM · ขั้นละ 10 นาที';
- document.getElementById('dist-why').textContent=isBox?'Box plot สรุปการกระจายทั้งห้าระดับบนแกนเวลาเดียวกัน จึงเปรียบเทียบ "ค่ากลาง" และ "ความกว้างของการรอ" ข้ามระดับได้ทันที — กล่อง = ผู้ป่วย 50% ตรงกลาง (Q1–Q3) · เส้นดำในกล่อง = มัธยฐาน · หนวด = ค่าปกติไม่เกิน 1.5 เท่าของ IQR · จุด = ผู้ป่วยที่รอนานผิดปกติ (outlier) · เส้นประ = เวลาเป้าหมาย':'ค่าเฉลี่ยซ่อนรูปร่างของปัญหา — ฮิสโตแกรมแสดงว่าผู้ป่วยแต่ละระดับ "รอแบบไหน": กระจุกตัวใกล้เป้า หรือมีกลุ่มหนึ่งที่หลุดไปรอนานผิดปกติ (เส้นดำ = เวลาเป้าหมาย)';
+ document.getElementById('dist-badge').textContent=isBox?'BOX PLOT · Q1–Q3, มัธยฐาน, หนวด P5–P95':'HISTOGRAM · ขั้นละ 10 นาที';
+ document.getElementById('dist-why').textContent=isBox?'Box plot สรุปการกระจายทั้งห้าระดับบนแกนเวลาเดียวกัน จึงเปรียบเทียบ "ค่ากลาง" และ "ความกว้างของการรอ" ข้ามระดับได้ทันที — กล่อง = ผู้ป่วยครึ่งกลาง (Q1–Q3) · เส้นดำในกล่อง = มัธยฐาน · หนวด = ช่วงที่ผู้ป่วย 90% อยู่ (P5–P95) · แถบจางพร้อมตัวเลข = กลุ่มที่รอนานผิดปกติ (เกิน 2 เท่าของเป้า หรือเกิน 120 นาที) · เส้นประ = เวลาเป้าหมาย':'ค่าเฉลี่ยซ่อนรูปร่างของปัญหา — ฮิสโตแกรมแสดงว่าผู้ป่วยแต่ละระดับ "รอแบบไหน": กระจุกตัวใกล้เป้า หรือมีกลุ่มหนึ่งที่หลุดไปรอนานผิดปกติ (เส้นดำ = เวลาเป้าหมาย)';
  if(isBox){
-  const rows=[];let boxNote=[];
+  const CAP=250;const rows=[];let boxNote=[];
   for(let e=1;e<=5;e++){const w=idx.filter(i=>R.e[i]===e).map(i=>R.w[i]);if(!w.length)continue;const b=[...w].sort((x,y)=>x-y);
-   const q1=quant(b,.25),med=quant(b,.5),q3=quant(b,.75),iqr=q3-q1;const loB=q1-1.5*iqr,hiB=q3+1.5*iqr;
-   const inl=b.filter(x=>x>=loB&&x<=hiB);const lo=inl.length?inl[0]:b[0],hi=inl.length?inl[inl.length-1]:b[b.length-1];const out=b.filter(x=>x<loB||x>hiB);
-   const st={min:b[0],q1,med,q3,max:b[b.length-1],lo,hi,out,n:b.length};
-   rows.push({label:`ESI ${e}`,s:st,color:E[e-1],target:TGT[e],tip:`<b>ESI ${e}</b> · n=${fmtN(b.length)} · เป้า ≤${TGT[e]} นาที<br>ต่ำสุด ${fmtN(st.min)} · Q1 ${fmtN(q1)} · <b>มัธยฐาน ${fmtN(med)}</b> · Q3 ${fmtN(q3)} · สูงสุด ${fmtN(st.max)}<br>IQR ${fmtN(iqr)} นาที · หนวด ${fmtN(lo)}–${fmtN(hi)}<br>outlier ${fmtN(out.length)} คน (${fmtP1(out.length/b.length)})`});
-   if(e===3&&out.length){const far=out.filter(x=>x>120).length;boxNote.push(`ESI 3: กล่องแคบมาก (IQR ${fmtN(iqr)} นาที) จึงมี outlier ${fmtN(out.length)} คน โดย ${fmtN(far)} คนลอยห่างออกไปที่ 120–220 นาที = กลุ่มที่หลุดจากระบบ`);}
+   const q1=quant(b,.25),med=quant(b,.5),q3=quant(b,.75),p5=quant(b,.05),p95=quant(b,.95),mx=b[b.length-1];
+   const thr=Math.max(2*TGT[e],120);const tailArr=b.filter(x=>x>thr);const tail={thr,count:tailArr.length,share:tailArr.length/b.length,to:tailArr.length?quant(tailArr,.99):thr};
+   const beyond=b.filter(x=>x>CAP).length;
+   const st={q1,med,q3,p5,p95,max:mx,n:b.length,tail,beyond};
+   rows.push({label:`ESI ${e}`,s:st,color:E[e-1],target:TGT[e],tip:`<b>ESI ${e}</b> · n=${fmtN(b.length)} · เป้า ≤${TGT[e]} นาที<br>P5 ${fmtN(p5)} · Q1 ${fmtN(q1)} · <b>มัธยฐาน ${fmtN(med)}</b> · Q3 ${fmtN(q3)} · P95 ${fmtN(p95)} · สูงสุด ${fmtN(mx)}<br>รอเกิน ${fmtN(thr)} นาที: ${fmtN(tail.count)} คน (${fmtP1(tail.share)})${beyond?`<br>รอเกิน ${CAP} นาที (นอกแกน): ${fmtN(beyond)} คน`:''}`});
+   if(e===3)boxNote.push(`ESI 3: ผู้ป่วยครึ่งกลางรอเพียง ${fmtN(q1)}–${fmtN(q3)} นาที แต่หนวดขวายืดไปถึง ${fmtN(p95)} นาที และแถบจางบอกว่า ${fmtN(tail.count)} คน (${fmtP1(tail.share)}) รอเกิน 120 นาที = กลุ่มที่หลุดจากระบบ`);
    if(e===4)boxNote.push(`ESI 4: ทั้งกล่อง (${fmtN(q1)}–${fmtN(q3)} นาที) อยู่เหนือเส้นเป้า 60 นาที = ปัญหาทั้งระบบ ไม่ใช่แค่ผู้ป่วยส่วนน้อย`);
    if(e===5)boxNote.push(`ESI 5: มัธยฐาน ${fmtN(med)} นาที คร่อมเส้นเป้า 120 พอดี ครึ่งหนึ่งของผู้ป่วยจึงเกินเป้า`);}
-  reg('boxplot',(c,big)=>boxplot(c,{rows,rowH:big?70:48,labelW:big?110:70,padR:big?260:210,aria:'box plot เวลารอแยกตาม ESI'}));
-  document.getElementById('hist-note').textContent=boxNote.join(' · ');
+  reg('boxplot',(c,big)=>boxplot(c,{rows,cap:CAP,rowH:big?76:54,labelW:big?110:70,padR:big?360:305,aria:'box plot เวลารอแยกตาม ESI'}));
+  document.getElementById('hist-note').textContent=`แกนตัดที่ ${CAP} นาที (จำนวนผู้ป่วยที่รอนานกว่านั้นระบุไว้ท้ายข้อความด้านขวาของแถว) · `+boxNote.join(' · ');
  } else {
   document.getElementById('hist-note').textContent='สีเทา = ทันเป้า · สีน้ำเงิน = เกินเป้า · '+note.join(' · ');
  }
